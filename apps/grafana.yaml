@@ -72,9 +72,9 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 96Mi
+            memory: 160Mi  # measured: about 190 MiB with the three dashboards
           limits:
-            memory: 256Mi
+            memory: 384Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

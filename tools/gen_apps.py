@@ -386,9 +386,9 @@ server:
   resources:
     requests:
       cpu: 30m
-      memory: 256Mi
+      memory: 384Mi  # measured: about 450 MiB after the first quarter hour, growing with trivy-operator's per-CVE series
     limits:
-      memory: 640Mi
+      memory: 896Mi
 # The blackbox exporter probes every UI from inside the cluster: an upgrade that breaks one shows up here,
 # whether or not its release notes said anything.
 extraScrapeConfigs: |
@@ -480,9 +480,9 @@ dashboards:
 resources:
   requests:
     cpu: 10m
-    memory: 96Mi
+    memory: 160Mi  # measured: about 190 MiB with the three dashboards
   limits:
-    memory: 256Mi
+    memory: 384Mi
 """, 0)
 
 APPS["headlamp"] = chart_app("headlamp", "headlamp", "https://kubernetes-sigs.github.io/headlamp", "headlamp", "0.42.0", f"""
