@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://falcosecurity.github.io/charts
     chart: falco
-    targetRevision: 8.0.5
+    targetRevision: 9.2.2
     helm:
       valuesObject:
         # Runtime detection with the modern eBPF probe (no kernel module). Alerts go to its log: kubectl -n falco logs ds/falco
