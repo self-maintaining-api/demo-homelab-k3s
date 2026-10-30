@@ -1,4 +1,4 @@
-# A private CA for the demo's ingresses (*.nip.io).
+# A private CA for the demo's ingresses (*.demo-k3s.internal).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

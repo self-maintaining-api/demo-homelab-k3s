@@ -1,21 +1,35 @@
 """Writes apps/*.yaml (the Argo CD Applications) from one place: chart, pinned version, values.
 
 Run after changing it: python3 tools/gen_apps.py. Stackat's pull requests edit apps/*.yaml directly; that is fine,
-this file is only a convenient way to write them the first time. Resource requests are set to what each pod uses at
+this file keeps whatever version apps/ already has (current_version), so it never undoes a merged upgrade. Resource requests are set to what each pod uses at
 rest on this cluster (4 vCPU, 5 GiB); memory limits leave headroom for start-up and upgrades.
 """
+import re
 from pathlib import Path
 
-IP = "192.168.178.20"
+DOMAIN = "demo-k3s.internal"  # the UIs' names; ".internal" is reserved for private networks, so no public DNS has it
 REPO = "https://github.com/self-maintaining-api/demo-homelab-k3s.git"
 OUT = Path(__file__).resolve().parent.parent / "apps"
+FILES = {"argocd": "argo-cd"}  # Application name -> file in apps/, where they differ
 
 
 def indent(text: str, n: int = 8) -> str:
     return "\n".join((" " * n + line) if line.strip() else "" for line in text.strip("\n").splitlines()) + "\n"
 
 
+def current_version(name: str, version: str) -> str:
+    """The version already in apps/<name>.yaml when there is one: merged upgrades (Stackat's pull requests) stay merged.
+    The version written here is only used for a new app."""
+    existing = OUT / f"{name}.yaml"
+    if existing.exists():
+        found = re.search(r"^    targetRevision: (\S+)$", existing.read_text(), re.M)
+        if found:
+            return found.group(1)
+    return version
+
+
 def chart_app(name, ns, repo, chart, version, values, wave, ssa=False, release=None, comment=""):
+    version = current_version(FILES.get(name, name), version)
     opts = ["CreateNamespace=true"] + (["ServerSideApply=true"] if ssa else [])
     head = "".join(f"# {line}\n" for line in comment.splitlines()) if comment else ""
     rel = f"\n      releaseName: {release}" if release else ""
@@ -147,7 +161,7 @@ server:
   ingress:
     enabled: true
     ingressClassName: nginx
-    hostname: argocd.{IP}.nip.io
+    hostname: argocd.{DOMAIN}
     annotations:
       cert-manager.io/cluster-issuer: demo-ca
     tls: true
@@ -429,11 +443,11 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: demo-ca
   hosts:
-    - grafana.{IP}.nip.io
+    - grafana.{DOMAIN}
   tls:
     - secretName: grafana-tls
       hosts:
-        - grafana.{IP}.nip.io
+        - grafana.{DOMAIN}
 persistence:
   enabled: false  # dashboards come from this repo and grafana.com, nothing to keep
 datasources:
@@ -494,14 +508,14 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: demo-ca
   hosts:
-    - host: headlamp.{IP}.nip.io
+    - host: headlamp.{DOMAIN}
       paths:
         - path: /
           type: Prefix
   tls:
     - secretName: headlamp-tls
       hosts:
-        - headlamp.{IP}.nip.io
+        - headlamp.{DOMAIN}
 resources:
   requests:
     cpu: 5m
@@ -542,7 +556,7 @@ resources:
     memory: 256Mi
 """, 0, ssa=True)
 
-APPS["falco"] = chart_app("falco", "falco", "https://falcosecurity.github.io/charts", "falco", "8.0.5", """
+APPS["falco"] = chart_app("falco", "falco", "https://falcosecurity.github.io/charts", "falco", "9.2.2", """
 # Runtime detection with the modern eBPF probe (no kernel module). Alerts go to its log: kubectl -n falco logs ds/falco
 driver:
   kind: modern_ebpf
@@ -558,7 +572,7 @@ resources:
     memory: 160Mi
   limits:
     memory: 512Mi
-""", 0, comment="Pinned one major behind (8 -> 9): a migration for Stackat to describe.")
+""", 0)
 
 APPS["descheduler"] = chart_app("descheduler", "kube-system", "https://kubernetes-sigs.github.io/descheduler", "descheduler", "0.34.0", """
 kind: CronJob
@@ -575,7 +589,7 @@ for name, text in APPS.items():
     (OUT / f"{name}.yaml").write_text(text)
 
 DIRS = {
-    "cert-manager-issuers": ("manifests/cert-manager-issuers", "cert-manager", -2, "A private CA for the demo's ingresses (*.nip.io)."),
+    "cert-manager-issuers": ("manifests/cert-manager-issuers", "cert-manager", -2, "A private CA for the demo's ingresses (*.demo-k3s.internal)."),
     "trust-bundle": ("manifests/trust-bundle", "cert-manager", 0, "trust-manager copies the demo CA into every namespace."),
     "kyverno-policies": ("manifests/kyverno-policies", "kyverno", 0, "Policies in Audit mode: they report, they never block."),
     "postgres": ("manifests/postgres", "demo-db", 1, "A one-instance PostgreSQL cluster run by CloudNativePG."),

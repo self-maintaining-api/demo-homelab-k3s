@@ -1,4 +1,3 @@
-# Pinned one major behind (8 -> 9): a migration for Stackat to describe.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

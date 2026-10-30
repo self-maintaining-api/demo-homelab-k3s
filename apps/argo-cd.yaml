@@ -73,7 +73,7 @@ spec:
           ingress:
             enabled: true
             ingressClassName: nginx
-            hostname: argocd.192.168.178.20.nip.io
+            hostname: argocd.demo-k3s.internal
             annotations:
               cert-manager.io/cluster-issuer: demo-ca
             tls: true
