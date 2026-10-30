@@ -40,6 +40,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "{wave}"
+{ALERTS_CHART}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -71,6 +72,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "{wave}"
+{ALERTS_PROBLEMS}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -102,6 +104,11 @@ RETRY = """    retry:
 
 SCRAPE = 'prometheus.io/scrape: "true"'
 
+# Upgrade alerts to Slack (Argo CD notifications, configured in the argo-cd app below)
+_PROBLEMS = ("on-upgrade-degraded", "on-upgrade-failed", "on-upgrade-stuck")
+ALERTS_PROBLEMS = "\n".join(f'    notifications.argoproj.io/subscribe.{t}.slack: ""' for t in _PROBLEMS)
+ALERTS_CHART = "\n".join(f'    notifications.argoproj.io/subscribe.{t}.slack: ""' for t in ("on-upgrade-healthy", *_PROBLEMS))
+
 APPS = {}
 
 APPS["argo-cd"] = chart_app("argocd", "argocd", "https://argoproj.github.io/argo-helm", "argo-cd", "10.8.4", f"""
@@ -110,6 +117,59 @@ dex:
   enabled: false  # no SSO on a LAN demo; the admin user signs in
 notifications:
   enabled: true
+  # The Slack webhook is a secret made by hand, never in this repository (README: Upgrade alerts):
+  #   kubectl -n argocd create secret generic argocd-notifications-secret --from-literal=slack-webhook-url=...
+  secret:
+    create: false
+  notifiers:
+    service.webhook.slack: |
+      url: $slack-webhook-url
+      headers:
+        - name: Content-Type
+          value: application/json
+  # Every upgrade ends in one message: healthy, degraded, failed to sync, or stuck. Once per version (oncePer).
+  triggers:
+    trigger.on-upgrade-healthy: |
+      - when: app.status.operationState != nil and app.status.operationState.phase == 'Succeeded' and app.status.health.status == 'Healthy'
+        oncePer: app.status.sync.revision
+        send: [upgrade-healthy]
+    trigger.on-upgrade-degraded: |
+      - when: app.status.health.status == 'Degraded'
+        oncePer: app.status.sync.revision
+        send: [upgrade-degraded]
+    trigger.on-upgrade-failed: |
+      - when: app.status.operationState != nil and app.status.operationState.phase in ['Error', 'Failed']
+        oncePer: app.status.sync.revision
+        send: [upgrade-failed]
+    trigger.on-upgrade-stuck: |
+      - when: app.status.health.status == 'Progressing' and app.status.operationState != nil and app.status.operationState.phase == 'Succeeded' and time.Now().Sub(time.Parse(app.status.operationState.finishedAt)).Minutes() >= 10
+        oncePer: app.status.sync.revision
+        send: [upgrade-stuck]
+  templates:
+    template.upgrade-healthy: |
+      webhook:
+        slack:
+          method: POST
+          body: |
+            {{"text": {{{{ printf "✅ *%s* %s rolled out healthy on the demo cluster." .app.metadata.name .app.spec.source.targetRevision | toJson }}}}}}
+    template.upgrade-degraded: |
+      webhook:
+        slack:
+          method: POST
+          body: |
+            {{"text": {{{{ printf "🔴 *%s* is Degraded after the upgrade to %s on the demo cluster: upgrade with care.\\n%s\\nArgo CD: https://argocd.demo-k3s.internal/applications/argocd/%s · Changes: https://github.com/self-maintaining-api/demo-homelab-k3s/commits/main/apps" .app.metadata.name .app.spec.source.targetRevision (.app.status.health.message | default "no message") .app.metadata.name | toJson }}}}}}
+    template.upgrade-failed: |
+      webhook:
+        slack:
+          method: POST
+          body: |
+            {{"text": {{{{ printf "🔴 *%s* could not be synced to %s on the demo cluster: upgrade with care.\\n%s\\nArgo CD: https://argocd.demo-k3s.internal/applications/argocd/%s" .app.metadata.name .app.spec.source.targetRevision (.app.status.operationState.message | default "no message") .app.metadata.name | toJson }}}}}}
+    template.upgrade-stuck: |
+      webhook:
+        slack:
+          method: POST
+          body: |
+            {{"text": {{{{ printf "🟠 *%s* is still not healthy 10 minutes after the upgrade to %s on the demo cluster (pods not ready?).\\n%s\\nArgo CD: https://argocd.demo-k3s.internal/applications/argocd/%s" .app.metadata.name .app.spec.source.targetRevision (.app.status.health.message | default "no message") .app.metadata.name | toJson }}}}}}
   resources:
     requests:
       cpu: 5m
@@ -522,8 +582,8 @@ resources:
 """, 0)
 
 APPS["trivy-operator"] = chart_app("trivy-operator", "trivy-system", "https://aquasecurity.github.io/helm-charts", "trivy-operator", "0.36.0", """
-# Scans the images that actually run and keeps a VulnerabilityReport per workload, with per-CVE metrics in
-# Prometheus: the cluster's own answer to "which of these CVEs affect us", next to what Stackat's issues say.
+# Scans the images that actually run and keeps a VulnerabilityReport per workload (every CVE: make vulns), with counts
+# per image and severity in Prometheus: the cluster's own answer to "which of these CVEs affect us", next to Stackat's.
 operator:
   scanJobsConcurrentLimit: 1  # one scan at a time on a small node
   scanJobTTL: 10m
@@ -535,7 +595,7 @@ operator:
   exposedSecretScannerEnabled: true
   infraAssessmentScannerEnabled: false
   clusterComplianceEnabled: false
-  metricsVulnIdEnabled: true
+  metricsVulnIdEnabled: false  # one series per CVE and image filled Prometheus; counts per image and severity stay
   metricsFindingsEnabled: true
   metricsConfigAuditInfo: true
 trivy:
