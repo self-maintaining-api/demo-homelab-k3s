@@ -30,7 +30,15 @@ for i in $(seq 1 120); do
 done
 
 echo "==> Waiting for cloud-init to finish"
-ssh_vm 'cloud-init status --wait >/dev/null; cloud-init status'
+# Exit code 2 means "done, with recoverable warnings" (common on cloud images): fine for us. 1 is a real failure.
+set +e
+ssh_vm 'cloud-init status --wait >/dev/null 2>&1; cloud-init status'
+code=$?
+set -e
+if [ "$code" = 1 ] || [ "$code" = 255 ]; then
+  echo "cloud-init failed on the VM (exit ${code}). Details: make ssh, then: cloud-init status --long" >&2
+  exit 1
+fi
 
 echo "==> Installing k3s and Argo CD"
 ssh_vm 'mkdir -p /tmp/stackat-demo'
