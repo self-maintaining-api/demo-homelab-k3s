@@ -51,9 +51,9 @@ Create a Proxmox user and API token for Terraform, with only the rights it needs
 
 ```sh
 pveum role add StackatDemo -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Audit Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.PowerMgmt"
-pveum user add terraform@pve --comment "Terraform: Stackat demo cluster"
-pveum aclmod / -user terraform@pve -role StackatDemo
-pveum user token add terraform@pve demo --privsep 0
+pveum user add stackat-demo@pve --comment "Terraform: Stackat demo cluster (demo-homelab-k3s)"
+pveum aclmod / -user stackat-demo@pve -role StackatDemo
+pveum user token add stackat-demo@pve demo --privsep 0
 ```
 
 The last command prints the token's secret once. Keep that window open for the next step.
@@ -66,7 +66,7 @@ git clone https://github.com/self-maintaining-api/demo-homelab-k3s.git && cd dem
 cp .env.example .env
 ```
 
-Open `.env` in an editor and paste the secret after `terraform@pve!demo=`. It never leaves your Mac (`.env` is ignored
+Open `.env` in an editor and paste the secret after `stackat-demo@pve!demo=`. It never leaves your Mac (`.env` is ignored
 by git).
 
 If your SSH key is not `~/.ssh/id_ed25519.pub`, or `192.168.178.20` is taken:

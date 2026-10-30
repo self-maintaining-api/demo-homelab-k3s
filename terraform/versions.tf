@@ -11,6 +11,6 @@ terraform {
 
 # Credentials come from the environment (.env, loaded by the Makefile), never from this repo:
 #   PROXMOX_VE_ENDPOINT  https://192.168.178.10:8006/
-#   PROXMOX_VE_API_TOKEN terraform@pve!demo=<secret>
+#   PROXMOX_VE_API_TOKEN stackat-demo@pve!demo=<secret>
 #   PROXMOX_VE_INSECURE  true   (Proxmox's self-signed certificate)
 provider "proxmox" {}
