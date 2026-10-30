@@ -355,15 +355,6 @@ reloader:
         memory: 96Mi
 """, 0)
 
-APPS["cloudnative-pg"] = chart_app("cloudnative-pg", "cnpg-system", "https://cloudnative-pg.github.io/charts", "cloudnative-pg", "0.26.1", """
-resources:
-  requests:
-    cpu: 10m
-    memory: 48Mi
-  limits:
-    memory: 192Mi
-""", -1, ssa=True)
-
 APPS["prometheus"] = chart_app("prometheus", "monitoring", "https://prometheus-community.github.io/helm-charts", "prometheus", "29.36.2", """
 alertmanager:
   enabled: false
@@ -562,24 +553,6 @@ resources:
     memory: 256Mi
 """, 0, ssa=True)
 
-APPS["falco"] = chart_app("falco", "falco", "https://falcosecurity.github.io/charts", "falco", "9.2.2", """
-# Runtime detection with the modern eBPF probe (no kernel module). Alerts go to its log: kubectl -n falco logs ds/falco
-driver:
-  kind: modern_ebpf
-falco:
-  json_output: true
-metrics:
-  enabled: true
-falcosidekick:
-  enabled: false
-resources:
-  requests:
-    cpu: 20m
-    memory: 160Mi
-  limits:
-    memory: 512Mi
-""", 0)
-
 APPS["descheduler"] = chart_app("descheduler", "kube-system", "https://kubernetes-sigs.github.io/descheduler", "descheduler", "0.34.0", """
 kind: CronJob
 schedule: "*/30 * * * *"  # every half hour; nothing runs in between
@@ -598,7 +571,6 @@ DIRS = {
     "cert-manager-issuers": ("manifests/cert-manager-issuers", "cert-manager", -2, "A private CA for the demo's ingresses (*.demo-k3s.internal)."),
     "trust-bundle": ("manifests/trust-bundle", "cert-manager", 0, "trust-manager copies the demo CA into every namespace."),
     "kyverno-policies": ("manifests/kyverno-policies", "kyverno", 0, "Policies in Audit mode: they report, they never block."),
-    "postgres": ("manifests/postgres", "demo-db", 1, "A one-instance PostgreSQL cluster run by CloudNativePG."),
     "demo-app": ("manifests/demo-app", "demo-app", 1,
                  "podinfo with a secret from External Secrets; Reloader restarts it when the secret changes."),
 }

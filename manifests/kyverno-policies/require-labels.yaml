@@ -43,19 +43,3 @@ spec:
           spec:
             containers:
               - image: "!*:latest"
----
-# CloudNativePG's database pods are labelled by the operator, not by us: exempt them (Kyverno's PolicyException feature).
-apiVersion: kyverno.io/v2
-kind: PolicyException
-metadata:
-  name: cnpg-instances
-  namespace: kyverno
-spec:
-  exceptions:
-    - policyName: require-app-labels
-      ruleNames: [check-app-name-label]
-  match:
-    any:
-      - resources:
-          namespaces: [demo-db]
-          kinds: [Pod, StatefulSet, Deployment]

@@ -11,7 +11,7 @@ DOMAIN := demo-k3s.internal
 UIS := argocd grafana headlamp podinfo
 export KUBECONFIG := $(CURDIR)/kubeconfig
 
-.PHONY: help check init plan vm bootstrap up status hosts urls argocd-password grafana-password headlamp-token vulns falco diff ssh destroy
+.PHONY: help check init plan vm bootstrap up status hosts urls argocd-password grafana-password headlamp-token vulns diff ssh destroy
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-18s %s\n", $$1, $$2}'
@@ -61,9 +61,6 @@ headlamp-token: ## A one-day, read-only token for Headlamp
 
 vulns: ## Vulnerabilities in the running images, per workload (trivy-operator)
 	@kubectl get vulnerabilityreports -A -o custom-columns='NAMESPACE:.metadata.namespace,WORKLOAD:.metadata.labels.trivy-operator\.resource\.name,IMAGE:.report.artifact.repository,TAG:.report.artifact.tag,CRITICAL:.report.summary.criticalCount,HIGH:.report.summary.highCount,MEDIUM:.report.summary.mediumCount'
-
-falco: ## Falco's alerts from the last hour (warnings and above)
-	@kubectl -n falco logs ds/falco -c falco --since 1h | grep -E '"priority":"(Warning|Error|Critical|Alert|Emergency)"' || echo "no alerts"
 
 diff: ## What the local branch changes in the cluster, compared with origin/main (needs helm)
 	python3 tools/upgrade_diff.py --base origin/main

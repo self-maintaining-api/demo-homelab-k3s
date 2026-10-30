@@ -28,12 +28,10 @@ purpose, so you can watch Stackat do its job here in the open.
 | External Secrets | `installCRDs` is not set here on purpose: the issue says so and shows how to check the value in the cluster |
 | Kyverno | Policies and a PolicyException (`manifests/kyverno-policies`) |
 | Reloader | Restarts podinfo when its secret changes |
-| CloudNativePG | Runs a PostgreSQL cluster (`manifests/postgres`) |
 | Prometheus | Metrics, with probes of every UI |
 | Blackbox exporter | The probes: an upgrade that breaks a UI shows up, release notes or not |
 | Grafana | Dashboards, including the running images' vulnerabilities |
 | trivy-operator | Scans the images that actually run, to compare with the CVEs an upgrade fixes |
-| Falco | Already upgraded across a major version (8 to 9) by a merged Stackat pull request |
 | metrics-server | `kubectl top` |
 | descheduler | Runs every half hour |
 | Headlamp | A read-only Kubernetes UI |
@@ -58,7 +56,7 @@ them have something real to match.
 | Path | What it is |
 | --- | --- |
 | `apps/` | One Argo CD Application per tool (Helm chart, pinned version, values), written by `tools/gen_apps.py` |
-| `manifests/` | Plain resources the apps use: the CA, policies, the database, the demo app |
+| `manifests/` | Plain resources the apps use: the CA, policies, the demo app |
 | `argocd/root.yaml` | The app of apps that points Argo CD at `apps/` |
 | `terraform/` | The virtual machine (Proxmox) |
 | `scripts/` | Installs k3s and Argo CD on a fresh machine |
