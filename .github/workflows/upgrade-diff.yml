@@ -1,5 +1,5 @@
 # On every pull request that changes an Argo CD app: render the chart at both versions and comment what really changes
-# in the cluster (tools/upgrade_diff.py). Read-only: it never touches the cluster.
+# in the cluster (tools/upgrade_diff.py). Read-only: it never touches the cluster, and it uses no secrets.
 name: upgrade diff
 
 on:
@@ -34,6 +34,8 @@ jobs:
           cat report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment on the pull request
+        # Pull requests from forks get a read-only token: their report stays in the run's summary, no comment.
+        if: github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
