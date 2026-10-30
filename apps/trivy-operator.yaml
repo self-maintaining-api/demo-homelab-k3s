@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://aquasecurity.github.io/helm-charts
     chart: trivy-operator
-    targetRevision: 0.36.0
+    targetRevision: 0.38.1
     helm:
       valuesObject:
         # Scans the images that actually run and keeps a VulnerabilityReport per workload, with per-CVE metrics in
