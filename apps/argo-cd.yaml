@@ -1,0 +1,50 @@
+# Installed first by scripts/vm-bootstrap.sh (same release name), then adopted by this Application.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argo-cd
+    targetRevision: 10.8.4
+    helm:
+      releaseName: argocd
+      valuesObject:
+        # Argo CD manages itself: a merged pull request that bumps this version upgrades Argo CD.
+        dex:
+          enabled: false
+        notifications:
+          enabled: false
+        configs:
+          params:
+            server.insecure: true  # TLS ends at ingress-nginx
+        server:
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            hostname: argocd.192.168.178.20.nip.io
+            annotations:
+              cert-manager.io/cluster-issuer: demo-ca
+            tls: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 5m

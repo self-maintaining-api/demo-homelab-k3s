@@ -1,0 +1,19 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: demo-db
+  namespace: demo-db
+spec:
+  instances: 1
+  storage:
+    size: 2Gi # k3s' local-path storage on the VM disk
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 384Mi
+  bootstrap:
+    initdb:
+      database: app
+      owner: app

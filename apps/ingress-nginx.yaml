@@ -1,0 +1,40 @@
+# Upstream retired ingress-nginx in 2026; it stays here because that is exactly what Stackat should flag.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    chart: ingress-nginx
+    targetRevision: 4.12.8
+    helm:
+      valuesObject:
+        controller:
+          service:
+            type: LoadBalancer  # k3s' service load balancer puts it on the VM's own address, ports 80 and 443
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ingress-nginx
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 5m

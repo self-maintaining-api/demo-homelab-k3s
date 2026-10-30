@@ -1,0 +1,45 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-app-labels
+  annotations:
+    policies.kyverno.io/title: Require app labels
+    policies.kyverno.io/description: Deployments and StatefulSets should carry app.kubernetes.io/name. Audit only.
+spec:
+  background: true
+  rules:
+    - name: check-app-name-label
+      match:
+        any:
+          - resources:
+              kinds: [Deployment, StatefulSet]
+      validate:
+        failureAction: Audit
+        message: "Set the label app.kubernetes.io/name."
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow the latest tag
+    policies.kyverno.io/description: Images should be pinned to a version. Audit only.
+spec:
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        failureAction: Audit
+        message: "Pin the image to a version, not :latest."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"

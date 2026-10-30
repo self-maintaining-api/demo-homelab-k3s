@@ -1,0 +1,23 @@
+# Stackat settings for this repository: https://docs.stackat.dev/stackat-yml/
+# This repo runs for real (k3s on Proxmox, deployed by Argo CD), so pull requests are merged and Argo CD rolls them out.
+
+# auto_pr: a pull request per tool and release: ready when nothing needs changing, a draft with the checklist otherwise.
+auto_pr: true
+
+# cooldown: days a release must be out before an issue or pull request targets it. 0: the latest release.
+cooldown: 0
+critical_skips_cooldown: true
+
+# scan: the Argo CD apps, the plain manifests and the Terraform that builds the VM. The scripts are not config.
+scan:
+  paths: [apps/, argocd/, manifests/, terraform/]
+
+# commands: only the repository's maintainers may ask for pull requests or ignore a tool.
+commands:
+  pr: [maintain]
+  ignore: [maintain]
+  reevaluate: [write]
+
+# up_to_date: one release behind still counts as up to date on the dashboard and in the weekly digest.
+up_to_date:
+  releases_behind: 1
