@@ -45,7 +45,6 @@ spec:
         defaultPackageImage:
           repository: ''
           name: trust-pkg-debian-trixie
-          _defaultReference: :v0.0.0
           pullPolicy: IfNotPresent
         automountServiceAccountToken: true
         serviceAccount:

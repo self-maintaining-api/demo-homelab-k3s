@@ -37,10 +37,12 @@ IMAGE_PINS = ("tag", "digest", "digestChroot")
 def _no_image_tags(node):
     """The defaults without pinned image tags and digests (image.tag, image.digest, exporter.tag, ...): pinning them
     here would stop a chart upgrade from upgrading its images, and the test bench would pass because nothing really
-    changed. Every other default is kept."""
+    changed. Keys starting with "_" are left out too: they are chart internals, not options (trust-manager's
+    _defaultReference is a placeholder in the chart's source that its release replaces). Every other default is kept."""
     if isinstance(node, dict):
         return {key: _no_image_tags(value) for key, value in node.items()
-                if not (key in IMAGE_PINS and isinstance(value, str) and value)}
+                if not (key in IMAGE_PINS and isinstance(value, str) and value)
+                and not str(key).startswith("_")}  # chart internals (trust-manager's _defaultReference: filled at release)
     if isinstance(node, list):
         return [_no_image_tags(v) for v in node]
     return node

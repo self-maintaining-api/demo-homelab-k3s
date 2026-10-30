@@ -1,4 +1,4 @@
-# Default values of the trivy-operator chart 0.36.0 (https://aquasecurity.github.io/helm-charts), as the chart ships them.
+# Default values of the trivy-operator chart 0.36.0 (https://aquasecurity.github.io/helm-charts), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 # Default values for the trivy-operator Helm chart, these are used to render
 # the templates into valid k8s Resources.

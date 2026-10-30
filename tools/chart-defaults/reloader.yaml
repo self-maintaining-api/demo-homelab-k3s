@@ -1,4 +1,4 @@
-# Default values of the reloader chart 2.1.5 (https://stakater.github.io/stakater-charts), as the chart ships them.
+# Default values of the reloader chart 2.1.5 (https://stakater.github.io/stakater-charts), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 # Generated from deployments/kubernetes/templates/chart/values.yaml.tmpl
 global:

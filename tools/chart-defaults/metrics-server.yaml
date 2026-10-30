@@ -1,4 +1,4 @@
-# Default values of the metrics-server chart 3.12.2 (https://kubernetes-sigs.github.io/metrics-server), as the chart ships them.
+# Default values of the metrics-server chart 3.12.2 (https://kubernetes-sigs.github.io/metrics-server), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 # Default values for metrics-server.
 # This is a YAML-formatted file.

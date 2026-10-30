@@ -1,4 +1,4 @@
-# Default values of the argo-cd chart 10.8.4 (https://argoproj.github.io/argo-helm), as the chart ships them.
+# Default values of the argo-cd chart 10.8.4 (https://argoproj.github.io/argo-helm), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 ## Argo CD configuration
 ## Ref: https://github.com/argoproj/argo-cd

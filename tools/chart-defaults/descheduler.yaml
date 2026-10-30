@@ -1,4 +1,4 @@
-# Default values of the descheduler chart 0.34.0 (https://kubernetes-sigs.github.io/descheduler), as the chart ships them.
+# Default values of the descheduler chart 0.34.0 (https://kubernetes-sigs.github.io/descheduler), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 # Default values for descheduler.
 # This is a YAML-formatted file.

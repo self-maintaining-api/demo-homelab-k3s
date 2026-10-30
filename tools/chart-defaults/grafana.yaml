@@ -1,4 +1,4 @@
-# Default values of the grafana chart 10.2.0 (https://grafana.github.io/helm-charts), as the chart ships them.
+# Default values of the grafana chart 10.2.0 (https://grafana.github.io/helm-charts), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 global:
   # -- Overrides the Docker registry globally for all images

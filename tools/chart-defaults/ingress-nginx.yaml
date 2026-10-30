@@ -1,4 +1,4 @@
-# Default values of the ingress-nginx chart 4.12.8 (https://kubernetes.github.io/ingress-nginx), as the chart ships them.
+# Default values of the ingress-nginx chart 4.12.8 (https://kubernetes.github.io/ingress-nginx), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 ## nginx configuration
 ## Ref: https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/index.md

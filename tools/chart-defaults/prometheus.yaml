@@ -1,4 +1,4 @@
-# Default values of the prometheus chart 29.36.2 (https://prometheus-community.github.io/helm-charts), as the chart ships them.
+# Default values of the prometheus chart 29.36.2 (https://prometheus-community.github.io/helm-charts), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 # yaml-language-server: $schema=values.schema.json
 # Default values for prometheus.

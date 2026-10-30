@@ -1,4 +1,4 @@
-# Default values of the cert-manager chart v1.18.6 (https://charts.jetstack.io), as the chart ships them.
+# Default values of the cert-manager chart v1.18.6 (https://charts.jetstack.io), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 # +docs:section=Global
 

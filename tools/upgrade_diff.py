@@ -20,7 +20,10 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import hashlib
+import hmac
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -85,8 +88,26 @@ def key(doc: dict) -> str:
     return f"{doc['kind']}/{meta.get('namespace', '') + '/' if meta.get('namespace') else ''}{meta.get('name', '?')}"
 
 
+RUN_KEY = os.urandom(32)  # per run: lets two renders' Secret data be compared without ever showing or hashing it reversibly
+
+
+def hide_secret(doc: dict) -> None:
+    """A Secret's values never appear in a report (pull request comments are public): each value becomes "<hidden>",
+    plus one keyed fingerprint of all of them, so a change still shows as a change."""
+    if doc.get("kind") != "Secret":
+        return
+    content = {f: doc.get(f) or {} for f in ("data", "stringData")}
+    mark = hmac.new(RUN_KEY, json.dumps(content, sort_keys=True).encode(), hashlib.sha256).hexdigest()[:12]
+    for field, values in content.items():
+        if values:
+            doc[field] = {k: "<hidden>" for k in values}
+    doc.setdefault("metadata", {}).setdefault("annotations", {})["upgrade-diff/data"] = f"fingerprint {mark} (values hidden)"
+
+
 def clean(doc: dict) -> dict:
-    """Drop what changes on every release without meaning anything: chart version labels, config checksums."""
+    """Drop what changes on every release without meaning anything: chart version labels, config checksums. Hide
+    Secret values."""
+    hide_secret(doc)
     def strip(meta: dict | None) -> None:
         if not isinstance(meta, dict):
             return

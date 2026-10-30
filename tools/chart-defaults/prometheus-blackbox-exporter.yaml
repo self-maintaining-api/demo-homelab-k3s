@@ -1,4 +1,4 @@
-# Default values of the prometheus-blackbox-exporter chart 11.17.2 (https://prometheus-community.github.io/helm-charts), as the chart ships them.
+# Default values of the prometheus-blackbox-exporter chart 11.17.2 (https://prometheus-community.github.io/helm-charts), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 global:
   ## Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)

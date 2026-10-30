@@ -1,4 +1,4 @@
-# Default values of the headlamp chart 0.42.0 (https://kubernetes-sigs.github.io/headlamp), as the chart ships them.
+# Default values of the headlamp chart 0.42.0 (https://kubernetes-sigs.github.io/headlamp), from the chart's source at that release tag.
 # tools/gen_apps.py writes every one of them into apps/ (with this repo's own settings on top).
 # Default values for headlamp.
 # This is a YAML-formatted file.
