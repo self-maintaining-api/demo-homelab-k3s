@@ -12,10 +12,20 @@ KNOWN_HOSTS="$PWD/.known_hosts"  # this repo's own file: a rebuilt VM gets a new
 SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="$KNOWN_HOSTS" -o ConnectTimeout=5 -o BatchMode=yes)
 ssh_vm() { ssh "${SSH_OPTS[@]}" "ubuntu@${IP}" "$@"; }
 
-echo "==> Waiting for SSH on ${IP}"
-for i in $(seq 1 60); do
-  ssh_vm true 2>/dev/null && break
-  [ "$i" = 60 ] && { echo "No SSH after 5 minutes: check the VM's console in Proxmox." >&2; exit 1; }
+echo "==> Waiting for SSH on ${IP} (up to 10 minutes on a first boot)"
+for i in $(seq 1 120); do
+  if error="$(ssh_vm true 2>&1)"; then break; fi
+  if [ "$i" = 120 ]; then
+    echo "No SSH after 10 minutes. The last error was:" >&2
+    echo "  ${error}" >&2
+    case "$error" in
+      *"Permission denied"*) echo "The VM answers but refuses your key: load it with ssh-add, or check ssh_public_key_file." >&2 ;;
+      *"timed out"*|*"No route"*|*"Host is down"*) echo "The VM does not answer: check its console on Proxmox with qm terminal 130 (exit with Ctrl+O)." >&2 ;;
+      *"refused"*) echo "The VM is up but sshd is not listening yet: run make bootstrap again in a minute." >&2 ;;
+    esac
+    exit 1
+  fi
+  [ $((i % 6)) = 0 ] && echo "    still waiting ($((i * 5))s): ${error}"
   sleep 5
 done
 
