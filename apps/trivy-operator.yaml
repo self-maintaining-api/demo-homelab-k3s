@@ -15,8 +15,8 @@ spec:
     targetRevision: 0.36.0
     helm:
       valuesObject:
-        # Scans the images that actually run and keeps a VulnerabilityReport per workload, with per-CVE metrics in
-        # Prometheus: the cluster's own answer to "which of these CVEs affect us", next to what Stackat's issues say.
+        # Scans the images that actually run and keeps a VulnerabilityReport per workload (every CVE: make vulns), with counts
+        # per image and severity in Prometheus: the cluster's own answer to "which of these CVEs affect us", next to Stackat's.
         operator:
           scanJobsConcurrentLimit: 1  # one scan at a time on a small node
           scanJobTTL: 10m
@@ -28,7 +28,7 @@ spec:
           exposedSecretScannerEnabled: true
           infraAssessmentScannerEnabled: false
           clusterComplianceEnabled: false
-          metricsVulnIdEnabled: true
+          metricsVulnIdEnabled: false  # one series per CVE and image filled Prometheus; counts per image and severity stay
           metricsFindingsEnabled: true
           metricsConfigAuditInfo: true
         trivy:
