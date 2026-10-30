@@ -1,0 +1,93 @@
+# A small web app pinned to an image tag (not a chart), so Stackat also has an image to follow.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podinfo
+  namespace: demo-app
+  labels:
+    app.kubernetes.io/name: podinfo
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: podinfo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: podinfo
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9898"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: podinfo
+          image: ghcr.io/stefanprodan/podinfo:6.14.1
+          ports:
+            - name: http
+              containerPort: 9898
+          envFrom:
+            - secretRef:
+                name: podinfo-config
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podinfo
+  namespace: demo-app
+spec:
+  selector:
+    app.kubernetes.io/name: podinfo
+  ports:
+    - name: http
+      port: 9898
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: podinfo
+  namespace: demo-app
+  annotations:
+    cert-manager.io/cluster-issuer: demo-ca
+spec:
+  ingressClassName: nginx
+  tls:
+    - secretName: podinfo-tls
+      hosts: [podinfo.192.168.178.20.nip.io]
+  rules:
+    - host: podinfo.192.168.178.20.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: podinfo
+                port:
+                  name: http

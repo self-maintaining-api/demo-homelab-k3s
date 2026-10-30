@@ -19,16 +19,67 @@ spec:
           enabled: false
         prometheus-pushgateway:
           enabled: false
-        server:
-          retention: 3d
-          persistentVolume:
-            size: 4Gi
+        kube-state-metrics:
+          enabled: true
           resources:
             requests:
-              cpu: 50m
+              cpu: 5m
+              memory: 32Mi
+            limits:
+              memory: 96Mi
+        prometheus-node-exporter:
+          enabled: true
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+        configmapReload:
+          prometheus:
+            resources:
+              requests:
+                cpu: 1m
+                memory: 8Mi
+              limits:
+                memory: 32Mi
+        server:
+          global:
+            scrape_interval: 1m
+            evaluation_interval: 1m
+          retention: 3d
+          retentionSize: 2GB
+          extraFlags:
+            - web.enable-lifecycle
+          persistentVolume:
+            size: 3Gi
+          resources:
+            requests:
+              cpu: 30m
               memory: 256Mi
             limits:
-              memory: 700Mi
+              memory: 640Mi
+        # The blackbox exporter probes every UI from inside the cluster: an upgrade that breaks one shows up here,
+        # whether or not its release notes said anything.
+        extraScrapeConfigs: |
+          - job_name: blackbox-http
+            metrics_path: /probe
+            params:
+              module: [http_2xx]
+            static_configs:
+              - targets:
+                  - http://argocd-server.argocd.svc/healthz
+                  - http://grafana.monitoring.svc/api/health
+                  - http://headlamp.headlamp.svc/
+                  - http://podinfo.demo-app.svc:9898/healthz
+                  - http://prometheus-server.monitoring.svc/-/healthy
+            relabel_configs:
+              - source_labels: [__address__]
+                target_label: __param_target
+              - source_labels: [__param_target]
+                target_label: instance
+              - target_label: __address__
+                replacement: blackbox-exporter.monitoring.svc:9115
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

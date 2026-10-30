@@ -15,14 +15,45 @@ spec:
     targetRevision: 3.6.4
     helm:
       valuesObject:
+        features:
+          policyExceptions:
+            enabled: true
+            namespace: kyverno
+          admissionReports:
+            enabled: true
         admissionController:
           replicas: 1
+          container:
+            resources:
+              requests:
+                cpu: 20m
+                memory: 128Mi
+              limits:
+                memory: 384Mi
         backgroundController:
           replicas: 1
+          resources:
+            requests:
+              cpu: 10m
+              memory: 48Mi
+            limits:
+              memory: 192Mi
         cleanupController:
           replicas: 1
+          resources:
+            requests:
+              cpu: 5m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
         reportsController:
           replicas: 1
+          resources:
+            requests:
+              cpu: 10m
+              memory: 48Mi
+            limits:
+              memory: 192Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno

@@ -17,8 +17,10 @@ spec:
       valuesObject:
         resources:
           requests:
-            cpu: 20m
-            memory: 64Mi
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            memory: 192Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: cnpg-system

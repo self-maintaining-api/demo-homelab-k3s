@@ -1,0 +1,40 @@
+# On every pull request that changes an Argo CD app: render the chart at both versions and comment what really changes
+# in the cluster (tools/upgrade_diff.py). Read-only: it never touches the cluster.
+name: upgrade diff
+
+on:
+  pull_request:
+    paths:
+      - "apps/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: upgrade-diff-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.19.0
+
+      - name: Render both versions
+        run: |
+          pip install --quiet pyyaml
+          python3 tools/upgrade_diff.py --base "origin/${{ github.base_ref }}" --out report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr comment "$PR" --body-file report.md --edit-last --create-if-none

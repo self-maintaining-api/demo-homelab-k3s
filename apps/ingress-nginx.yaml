@@ -17,12 +17,28 @@ spec:
     helm:
       valuesObject:
         controller:
+          replicaCount: 1
           service:
             type: LoadBalancer  # k3s' service load balancer puts it on the VM's own address, ports 80 and 443
+          allowSnippetAnnotations: true  # on purpose: the setting behind 2025's IngressNightmare CVEs, so advisories match here
+          config:
+            annotations-risk-level: Critical
+            use-forwarded-headers: "true"
+            enable-real-ip: "true"
+            log-format-escape-json: "true"
+          admissionWebhooks:
+            enabled: true
+          metrics:
+            enabled: true
+          podAnnotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "10254"
           resources:
             requests:
-              cpu: 50m
+              cpu: 20m
               memory: 96Mi
+            limits:
+              memory: 256Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: ingress-nginx

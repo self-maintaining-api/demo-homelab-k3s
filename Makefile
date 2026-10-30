@@ -9,7 +9,7 @@ TF := terraform -chdir=terraform
 IP = $(shell $(TF) output -raw ip 2>/dev/null || echo 192.168.178.20)
 export KUBECONFIG := $(CURDIR)/kubeconfig
 
-.PHONY: help check init plan vm bootstrap up status urls argocd-password grafana-password headlamp-token ssh destroy
+.PHONY: help check init plan vm bootstrap up status urls argocd-password grafana-password headlamp-token vulns falco diff ssh destroy
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-18s %s\n", $$1, $$2}'
@@ -40,6 +40,7 @@ urls: ## The web UIs (needs nip.io to resolve: see README if it does not)
 	@echo "  Argo CD   https://argocd.$(IP).nip.io    (admin / make argocd-password)"
 	@echo "  Grafana   https://grafana.$(IP).nip.io   (admin / make grafana-password)"
 	@echo "  Headlamp  https://headlamp.$(IP).nip.io  (token: make headlamp-token)"
+	@echo "  podinfo   https://podinfo.$(IP).nip.io"
 
 argocd-password: ## Argo CD's initial admin password
 	@kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo
@@ -49,6 +50,15 @@ grafana-password: ## Grafana's admin password
 
 headlamp-token: ## A one-day, read-only token for Headlamp
 	@kubectl -n headlamp create token headlamp --duration 24h
+
+vulns: ## Vulnerabilities in the running images, per workload (trivy-operator)
+	@kubectl get vulnerabilityreports -A -o custom-columns='NAMESPACE:.metadata.namespace,WORKLOAD:.metadata.labels.trivy-operator\.resource\.name,IMAGE:.report.artifact.repository,TAG:.report.artifact.tag,CRITICAL:.report.summary.criticalCount,HIGH:.report.summary.highCount,MEDIUM:.report.summary.mediumCount'
+
+falco: ## Falco's alerts from the last hour (warnings and above)
+	@kubectl -n falco logs ds/falco -c falco --since 1h | grep -E '"priority":"(Warning|Error|Critical|Alert|Emergency)"' || echo "no alerts"
+
+diff: ## What the local branch changes in the cluster, compared with origin/main (needs helm)
+	python3 tools/upgrade_diff.py --base origin/main
 
 ssh: ## SSH to the VM
 	ssh -o UserKnownHostsFile=.known_hosts ubuntu@$(IP)

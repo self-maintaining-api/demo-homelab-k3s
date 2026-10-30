@@ -13,6 +13,12 @@ spec:
       memory: 128Mi
     limits:
       memory: 384Mi
+  postgresql:
+    parameters:  # sized for a demo: the defaults assume a whole machine
+      shared_buffers: 64MB
+      max_connections: "30"
+      effective_cache_size: 192MB
+  enableSuperuserAccess: false
   bootstrap:
     initdb:
       database: app

@@ -1,11 +1,11 @@
-# A self-signed CA for the demo's ingresses (*.nip.io).
+# A private CA for the demo's ingresses (*.nip.io).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: cert-manager-issuers
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-wave: "-2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

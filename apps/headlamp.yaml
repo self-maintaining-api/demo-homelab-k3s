@@ -31,6 +31,12 @@ spec:
             - secretName: headlamp-tls
               hosts:
                 - headlamp.192.168.178.20.nip.io
+        resources:
+          requests:
+            cpu: 5m
+            memory: 24Mi
+          limits:
+            memory: 96Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: headlamp

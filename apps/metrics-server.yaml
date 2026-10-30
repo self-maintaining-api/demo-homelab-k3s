@@ -18,6 +18,14 @@ spec:
       valuesObject:
         args:
           - --kubelet-insecure-tls  # k3s kubelets serve self-signed certificates
+        metrics:
+          enabled: true
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 96Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
