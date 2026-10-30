@@ -127,13 +127,19 @@ configs:
     statusbadge.enabled: true
     exec.enabled: true
     kustomize.buildOptions: --enable-helm
+    # trivy-operator writes a report per workload and rewrites them on every scan; Argo CD manages none of them,
+    # and watching them all crashed the controller (out of memory). Kyverno's reports are in the chart's defaults.
+    resourceExclusionsAdditional:
+      - apiGroups: [aquasecurity.github.io]
+        kinds: ["*"]
+        clusters: ["*"]
 controller:
   resources:
     requests:
       cpu: 50m
-      memory: 192Mi
+      memory: 256Mi
     limits:
-      memory: 512Mi
+      memory: 1Gi  # measured: over 512 MiB with ~20 apps and the reports above
   metrics:
     enabled: true
     service:
