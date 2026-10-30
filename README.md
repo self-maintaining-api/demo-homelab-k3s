@@ -42,6 +42,13 @@ Plus podinfo, a small web app pinned by image tag, and the Terraform provider th
 (`terraform/`, also pinned behind). Many chart features are switched on, so release notes and security advisories about
 them have something real to match.
 
+## Upgrade alerts
+
+Every upgrade that reaches the cluster ends in one Slack message from Argo CD: rolled out healthy, Degraded after
+the upgrade, failed to sync, or still not healthy 10 minutes later. A red one means that release needs care before
+anyone else upgrades, and it is how we check Stackat's verdicts against a real cluster. The rules are Argo CD
+notifications in `apps/argo-cd.yaml`; the Slack webhook is a Kubernetes secret that never enters this repository.
+
 ## How the loop works
 
 1. Stackat reads every release note between the version pinned here and the latest, for each tool.
