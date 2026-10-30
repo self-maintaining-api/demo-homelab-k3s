@@ -5,12 +5,75 @@ this file keeps whatever version apps/ already has (current_version), so it neve
 rest on this cluster (4 vCPU, 5 GiB); memory limits leave headroom for start-up and upgrades.
 """
 import re
+import textwrap
 from pathlib import Path
+
+import yaml
 
 DOMAIN = "demo-k3s.internal"  # the UIs' names; ".internal" is reserved for private networks, so no public DNS has it
 REPO = "https://github.com/self-maintaining-api/demo-homelab-k3s.git"
 OUT = Path(__file__).resolve().parent.parent / "apps"
 FILES = {"argocd": "argo-cd"}  # Application name -> file in apps/, where they differ
+DEFAULTS = Path(__file__).resolve().parent / "chart-defaults"  # each chart's own values.yaml, at the version pinned
+
+
+def _text(dumper, data):
+    """Multi-line strings (configs, templates) as readable YAML blocks."""
+    if "\n" in data:
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+class _Dumper(yaml.SafeDumper):
+    pass
+
+
+_Dumper.add_representer(str, _text)
+
+
+IMAGE_PINS = ("tag", "digest", "digestChroot")
+
+
+def _no_image_tags(node):
+    """The defaults without pinned image tags and digests (image.tag, image.digest, exporter.tag, ...): pinning them
+    here would stop a chart upgrade from upgrading its images, and the test bench would pass because nothing really
+    changed. Every other default is kept."""
+    if isinstance(node, dict):
+        return {key: _no_image_tags(value) for key, value in node.items()
+                if not (key in IMAGE_PINS and isinstance(value, str) and value)}
+    if isinstance(node, list):
+        return [_no_image_tags(v) for v in node]
+    return node
+
+
+def _merge(base, ours):
+    """Our settings on top of the defaults: maps merge, everything else (lists too, as in Helm) is replaced."""
+    if isinstance(base, dict) and isinstance(ours, dict):
+        out = dict(base)
+        for key, value in ours.items():
+            out[key] = _merge(base.get(key), value) if key in base else value
+        return out
+    return ours
+
+
+def every_option(chart: str, values: str) -> tuple[str, int]:
+    """Every option the chart has, at its default, with this repo's own settings on top: release notes about any
+    option then touch this repository, and an option a new chart renames or removes shows up in the upgrade diff.
+    Returns the values as YAML and how many settings are this repo's own."""
+    ours = yaml.safe_load(values) or {}
+    defaults_file = DEFAULTS / f"{chart}.yaml"
+    if not defaults_file.exists():
+        return values, 0
+    merged = _merge(_no_image_tags(yaml.safe_load(defaults_file.read_text()) or {}), ours)
+    count = len(_leaves(ours))
+    return yaml.dump(merged, Dumper=_Dumper, sort_keys=False, width=4096, allow_unicode=True), count
+
+
+def _leaves(node, prefix=""):
+    if isinstance(node, dict) and node:
+        return [leaf for k, v in node.items() for leaf in _leaves(v, f"{prefix}.{k}" if prefix else str(k))]
+    return [prefix]
+
 
 
 def indent(text: str, n: int = 8) -> str:
@@ -30,6 +93,11 @@ def current_version(name: str, version: str) -> str:
 
 def chart_app(name, ns, repo, chart, version, values, wave, ssa=False, release=None, comment=""):
     version = current_version(FILES.get(name, name), version)
+    values, own = every_option(chart, values)
+    note = (f"Every option of the {chart} chart is set below, at the default of the version these values were written for "
+            f"(tools/chart-defaults/{chart}.yaml; image tags left to the chart), so release notes about any of them match "
+            f"this repository. {own} of the settings are this repository's own choices: see tools/gen_apps.py.")
+    comment = (comment + "\n" if comment else "") + "\n".join(textwrap.wrap(note, 116))
     opts = ["CreateNamespace=true"] + (["ServerSideApply=true"] if ssa else [])
     head = "".join(f"# {line}\n" for line in comment.splitlines()) if comment else ""
     rel = f"\n      releaseName: {release}" if release else ""

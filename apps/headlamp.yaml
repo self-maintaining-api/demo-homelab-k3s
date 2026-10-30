@@ -1,3 +1,6 @@
+# Every option of the headlamp chart is set below, at the default of the version these values were written for
+# (tools/chart-defaults/headlamp.yaml; image tags left to the chart), so release notes about any of them match this
+# repository. 9 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -19,28 +22,130 @@ spec:
     targetRevision: 0.42.0
     helm:
       valuesObject:
+        replicaCount: 1
+        image:
+          registry: ghcr.io
+          repository: headlamp-k8s/headlamp
+          pullPolicy: IfNotPresent
+          tag: ''
+        imagePullSecrets: []
+        nameOverride: ''
+        fullnameOverride: ''
+        namespaceOverride: ''
+        initContainers: []
+        extraContainers: []
+        config:
+          inCluster: true
+          inClusterContextName: main
+          baseURL: ''
+          sessionTTL: 86400
+          oidc:
+            secret:
+              create: true
+              name: oidc
+            clientID: ''
+            clientSecret: ''
+            issuerURL: ''
+            scopes: ''
+            callbackURL: ''
+            validatorClientID: ''
+            validatorIssuerURL: ''
+            useAccessToken: false
+            usePKCE: false
+            useCookie: false
+            externalSecret:
+              enabled: false
+              name: ''
+            meUserInfoURL: ''
+          pluginsDir: /headlamp/plugins
+          enableHelm: false
+          watchPlugins: false
+          extraArgs: []
+        automountServiceAccountToken: true
+        serviceAccount:
+          create: true
+          annotations: {}
+          name: ''
         clusterRoleBinding:
-          clusterRoleName: view  # read-only: a demo UI, not an admin console
+          create: true
+          clusterRoleName: view
+          annotations: {}
+        deploymentAnnotations: {}
+        podAnnotations: {}
+        podLabels: {}
+        hostUsers: true
+        podSecurityContext: {}
+        securityContext:
+          runAsNonRoot: true
+          privileged: false
+          runAsUser: 100
+          runAsGroup: 101
+        service:
+          annotations: {}
+          type: ClusterIP
+          port: 80
+          clusterIP: ''
+          loadBalancerIP: ''
+          loadBalancerSourceRanges: []
+          nodePort: null
+          extraServicePorts: []
+        volumeMounts: []
+        volumes: []
+        persistentVolumeClaim:
+          enabled: false
+          annotations: {}
+          accessModes: []
+          size: ''
+          storageClassName: ''
+          selector: {}
+          volumeMode: ''
         ingress:
           enabled: true
-          ingressClassName: nginx
           annotations:
             cert-manager.io/cluster-issuer: demo-ca
+          labels: {}
+          ingressClassName: nginx
           hosts:
-            - host: headlamp.demo-k3s.internal
-              paths:
-                - path: /
-                  type: Prefix
+          - host: headlamp.demo-k3s.internal
+            paths:
+            - path: /
+              type: Prefix
           tls:
-            - secretName: headlamp-tls
-              hosts:
-                - headlamp.demo-k3s.internal
+          - secretName: headlamp-tls
+            hosts:
+            - headlamp.demo-k3s.internal
+        httpRoute:
+          enabled: false
+          annotations: {}
+          labels: {}
+          parentRefs: []
+          hostnames: []
+          rules: []
         resources:
           requests:
             cpu: 5m
             memory: 24Mi
           limits:
             memory: 96Mi
+        nodeSelector: {}
+        tolerations: []
+        affinity: {}
+        topologySpreadConstraints: []
+        priorityClassName: ''
+        pluginsManager:
+          enabled: false
+          configFile: plugin.yml
+          configContent: ''
+          baseImage: node:lts-alpine
+          version: latest
+          volumeMounts: []
+          securityContext: {}
+        podDisruptionBudget:
+          enabled: false
+          minAvailable: 0
+          maxUnavailable: null
+          unhealthyPodEvictionPolicy: null
+        extraManifests: []
   destination:
     server: https://kubernetes.default.svc
     namespace: headlamp

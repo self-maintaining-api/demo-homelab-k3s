@@ -38,6 +38,12 @@ purpose, so you can watch Stackat do its job here in the open.
 
 The versions running now are the `targetRevision` in each file under `apps/`; they move as pull requests are merged.
 
+**Every option of every chart is set explicitly** (about 4,000 settings across the charts), at the default of the version
+it was written for, with this repository's own choices on top; image tags and digests are left to the chart, so an
+upgrade still upgrades the images. That way any release note about any option touches this repository, and an option a
+new chart renames or removes shows up in the upgrade diff instead of being ignored by Helm in silence. The defaults
+come from `tools/chart-defaults/`; `tools/gen_apps.py` writes the apps.
+
 Plus podinfo, a small web app pinned by image tag, and the Terraform provider that builds the virtual machine
 (`terraform/`, also pinned behind). Many chart features are switched on, so release notes and security advisories about
 them have something real to match.

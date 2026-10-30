@@ -1,3 +1,6 @@
+# Every option of the prometheus-blackbox-exporter chart is set below, at the default of the version these values were
+# written for (tools/chart-defaults/prometheus-blackbox-exporter.yaml; image tags left to the chart), so release notes
+# about any of them match this repository. 4 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -19,13 +22,246 @@ spec:
     targetRevision: 11.17.2
     helm:
       valuesObject:
-        fullnameOverride: blackbox-exporter
+        global:
+          imageRegistry: ''
+        restartPolicy: Always
+        kind: Deployment
+        namespaceOverride: ''
+        kubeVersionOverride: ''
+        releaseLabel: false
+        podDisruptionBudget: {}
+        automountServiceAccountToken: false
+        extraEnv: []
+        extraEnvFrom: []
+        extraVolumes: []
+        extraVolumeMounts: null
+        extraInitContainers: []
+        extraContainers: []
+        revisionHistoryLimit: 10
+        hostNetwork: false
+        strategy:
+          rollingUpdate:
+            maxSurge: 1
+            maxUnavailable: 0
+          type: RollingUpdate
+        image:
+          registry: quay.io
+          repository: prometheus/blackbox-exporter
+          tag: ''
+          pullPolicy: IfNotPresent
+          digest: ''
+        podSecurityContext: {}
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+        nodeSelector: {}
+        tolerations: []
+        affinity: {}
+        topologySpreadConstraints: []
+        configExistingSecretName: ''
+        secretConfig: false
+        config:
+          modules:
+            http_2xx:
+              prober: http
+              timeout: 5s
+              http:
+                valid_http_versions:
+                - HTTP/1.1
+                - HTTP/2.0
+                follow_redirects: true
+                preferred_ip_protocol: ip4
+        extraConfigmapMounts: []
+        extraSecretMounts: []
         resources:
           requests:
             cpu: 5m
             memory: 16Mi
           limits:
             memory: 64Mi
+        priorityClassName: ''
+        service:
+          annotations: {}
+          labels: {}
+          type: ClusterIP
+          port: 9115
+          ipDualStack:
+            enabled: false
+            ipFamilies:
+            - IPv6
+            - IPv4
+            ipFamilyPolicy: PreferDualStack
+        containerPort: 9115
+        hostPort: 0
+        serviceAccount:
+          create: true
+          name: null
+          annotations: {}
+        ingress:
+          enabled: false
+          className: ''
+          labels: {}
+          annotations: {}
+          hosts:
+          - host: chart-example.local
+            paths:
+            - path: /
+              pathType: ImplementationSpecific
+          tls: []
+        route:
+          main:
+            enabled: false
+            apiVersion: ''
+            kind: ''
+            name: ''
+            annotations: {}
+            labels: {}
+            parentRefs: []
+            hostnames: []
+            additionalRules: []
+            filters: []
+            matches:
+            - path:
+                type: PathPrefix
+                value: /
+            httpsRedirect: false
+        podAnnotations: {}
+        deploymentAnnotations: {}
+        secretAnnotations: {}
+        hostAliases: []
+        pod:
+          labels: {}
+        extraArgs: []
+        replicas: 1
+        serviceMonitor:
+          apiVersion: monitoring.coreos.com/v1
+          selfMonitor:
+            enabled: false
+            additionalMetricsRelabels: {}
+            additionalRelabeling: []
+            labels: {}
+            path: /metrics
+            scheme: http
+            tlsConfig: {}
+            interval: 30s
+            scrapeTimeout: 30s
+          enabled: false
+          defaults:
+            additionalMetricsRelabels: {}
+            additionalRelabeling: []
+            labels: {}
+            interval: 30s
+            scrapeTimeout: 30s
+            honorTimestamps: true
+            module: http_2xx
+          scheme: http
+          path: /probe
+          tlsConfig: {}
+          bearerTokenFile: null
+          targets: null
+        prometheusRule:
+          enabled: false
+          additionalLabels: {}
+          namespace: ''
+          rules: []
+        podMonitoring:
+          selfMonitor:
+            enabled: false
+            additionalMetricsRelabels: {}
+            labels: {}
+            path: /metrics
+            interval: 30s
+            scrapeTimeout: 30s
+          enabled: false
+          defaults:
+            additionalMetricsRelabels: {}
+            labels: {}
+            interval: 30s
+            scrapeTimeout: 30s
+            module: http_2xx
+          scheme: http
+          path: /probe
+          tlsConfig: {}
+          targets: null
+        networkPolicy:
+          enabled: false
+          allowMonitoringNamespace: false
+          monitoringNamespaceName: monitoring
+        dnsPolicy: null
+        dnsConfig: null
+        extraManifests: []
+        commonLabels: {}
+        verticalPodAutoscaler:
+          enabled: false
+          controlledResources: []
+          maxAllowed: {}
+          minAllowed: {}
+          updatePolicy:
+            updateMode: Auto
+        configReloader:
+          enabled: false
+          containerPort: 8080
+          config:
+            logFormat: logfmt
+            logLevel: info
+            watchInterval: 1m
+          image:
+            registry: quay.io
+            repository: prometheus-operator/prometheus-config-reloader
+            pullPolicy: IfNotPresent
+            digest: ''
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+          resources:
+            limits:
+              memory: 50Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: reloader-web
+              scheme: HTTP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: reloader-web
+              scheme: HTTP
+          service:
+            port: 8080
+          serviceMonitor:
+            selfMonitor:
+              additionalMetricsRelabels: {}
+              additionalRelabeling: []
+              path: /metrics
+              scheme: http
+              tlsConfig: {}
+              interval: 30s
+              scrapeTimeout: 30s
+        fullnameOverride: blackbox-exporter
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
