@@ -1,3 +1,6 @@
+# Every option of the trust-manager chart is set below, at the default of the version these values were written for
+# (tools/chart-defaults/trust-manager.yaml; image tags left to the chart), so release notes about any of them match
+# this repository. 5 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -19,16 +22,113 @@ spec:
     targetRevision: v0.23.0
     helm:
       valuesObject:
-        # Copies the demo CA into a ConfigMap in every namespace (manifests/trust-bundle), so apps can trust the ingresses.
+        global:
+          rbac:
+            create: true
+        crds:
+          enabled: true
+          keep: true
+        replicaCount: 1
+        revisionHistoryLimit: 10
+        nameOverride: ''
+        namespace: ''
+        imagePullSecrets: []
+        imageRegistry: quay.io
+        imageNamespace: jetstack
+        image:
+          repository: ''
+          name: trust-manager
+          pullPolicy: IfNotPresent
+        defaultPackage:
+          enabled: true
+          resources: {}
+        defaultPackageImage:
+          repository: ''
+          name: trust-pkg-debian-trixie
+          pullPolicy: IfNotPresent
+        automountServiceAccountToken: true
+        serviceAccount:
+          create: true
+          automountServiceAccountToken: true
+        volumes: []
+        volumeMounts: []
         secretTargets:
           enabled: true
           authorizedSecretsAll: true
+          authorizedSecrets: []
         resources:
           requests:
             cpu: 5m
             memory: 32Mi
           limits:
             memory: 128Mi
+        priorityClassName: ''
+        nodeSelector:
+          kubernetes.io/os: linux
+        affinity: {}
+        tolerations: []
+        topologySpreadConstraints: []
+        filterExpiredCertificates:
+          enabled: false
+        filterNonCACerts:
+          enabled: false
+        app:
+          minTLSVersion: ''
+          cipherSuites: ''
+          logFormat: text
+          logLevel: 1
+          leaderElection:
+            enabled: true
+            leaseDuration: 15s
+            renewDeadline: 10s
+          readinessProbe:
+            port: 6060
+            path: /readyz
+          trust:
+            namespace: cert-manager
+          securityContext:
+            seccompProfileEnabled: true
+          podLabels: {}
+          podAnnotations: {}
+          webhook:
+            host: 0.0.0.0
+            port: 6443
+            timeoutSeconds: 5
+            service:
+              type: ClusterIP
+              ipFamilyPolicy: ''
+              ipFamilies: []
+            tls:
+              helmCert:
+                enabled: false
+              approverPolicy:
+                enabled: false
+                certManagerNamespace: cert-manager
+                certManagerServiceAccount: cert-manager
+              certificate:
+                duration: ''
+                secretTemplate: {}
+            hostNetwork: false
+          metrics:
+            port: 9402
+            service:
+              enabled: true
+              type: ClusterIP
+              ipFamilyPolicy: ''
+              ipFamilies: []
+              servicemonitor:
+                enabled: false
+                prometheusInstance: default
+                interval: 10s
+                scrapeTimeout: 5s
+                labels: {}
+                endpointAdditionalProperties: {}
+        podDisruptionBudget:
+          enabled: false
+        commonLabels: {}
+        commonAnnotations: {}
+        extraObjects: []
+        enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
