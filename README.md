@@ -78,8 +78,7 @@ make status   # every app Synced / Healthy
 make hosts    # the /etc/hosts line for the UIs (*.demo-k3s.internal)
 ```
 
-`make help` lists the rest. To run Argo CD from your own fork, change the repository address in `argocd/root.yaml` and
-`apps/`.
+`make help` lists the rest. To run it from your own copy, change the repository address in `argocd/root.yaml` and `apps/`.
 
 ## Try Stackat on your own repositories
 
