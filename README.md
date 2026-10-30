@@ -22,10 +22,10 @@ purpose, so you can watch Stackat do its job here in the open.
 | App | What to look for |
 | --- | --- |
 | Argo CD | Argo CD deploys everything, itself included: merging its pull request upgrades Argo CD |
-| cert-manager | Several minor versions behind, with a private CA in use (`manifests/cert-manager-issuers`) |
+| cert-manager | An edit needed: the issue points at the exact line in `manifests/cert-manager-issuers` that a default change affects |
 | trust-manager | Its `Bundle` resource (`manifests/trust-bundle`) |
-| ingress-nginx | Retired upstream in 2026, and snippet annotations are on (the setting behind 2025's IngressNightmare CVEs) |
-| External Secrets | `installCRDs` is not set here on purpose: the issue says so and shows how to check the value in the cluster |
+| ingress-nginx | Snippet annotations are on (the setting behind 2025's IngressNightmare CVEs) |
+| External Secrets | A safe upgrade: nothing in the release notes touches this repository, so the pull request is ready to merge |
 | Kyverno | Policies and a PolicyException (`manifests/kyverno-policies`) |
 | Reloader | Restarts podinfo when its secret changes |
 | Prometheus | Metrics, with probes of every UI |
