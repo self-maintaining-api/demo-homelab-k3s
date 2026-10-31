@@ -1,5 +1,5 @@
 # Every option of the kyverno chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/kyverno.yaml; image tags left to the chart), so release notes about any of them match this
+# (tools/chart-defaults/kyverno.yaml; images left to the chart), so release notes about any of them match this
 # repository. 19 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -104,10 +104,7 @@ spec:
             - policyexceptions.policies.kyverno.io
             - validatingpolicies.policies.kyverno.io
             image:
-              registry: null
               defaultRegistry: reg.kyverno.io
-              repository: kyverno/kyverno-cli
-              tag: null
               pullPolicy: IfNotPresent
             imagePullSecrets: []
             podSecurityContext: {}
@@ -345,8 +342,6 @@ spec:
         test:
           sleep: 20
           image:
-            registry: curlimages
-            repository: curl
             pullPolicy: null
           imagePullSecrets: []
           resources:
@@ -378,8 +373,6 @@ spec:
           autoDeleteWebhooks:
             enabled: false
           image:
-            registry: registry.k8s.io
-            repository: kubectl
             pullPolicy: null
           imagePullSecrets: []
           podSecurityContext: {}
@@ -604,10 +597,7 @@ spec:
           imagePullSecrets: []
           initContainer:
             image:
-              registry: null
               defaultRegistry: reg.kyverno.io
-              repository: kyverno/kyvernopre
-              tag: null
               pullPolicy: null
             resources:
               limits:
@@ -630,10 +620,7 @@ spec:
             extraEnvVars: []
           container:
             image:
-              registry: null
               defaultRegistry: reg.kyverno.io
-              repository: kyverno/kyverno
-              tag: null
               pullPolicy: IfNotPresent
             resources:
               limits:
@@ -757,10 +744,7 @@ spec:
             clusterRole:
               extraResources: []
           image:
-            registry: null
             defaultRegistry: reg.kyverno.io
-            repository: kyverno/background-controller
-            tag: null
             pullPolicy: IfNotPresent
           imagePullSecrets: []
           replicas: 1
@@ -875,10 +859,7 @@ spec:
               extraResources: []
           createSelfSignedCert: false
           image:
-            registry: null
             defaultRegistry: reg.kyverno.io
-            repository: kyverno/cleanup-controller
-            tag: null
             pullPolicy: IfNotPresent
           imagePullSecrets: []
           replicas: 1
@@ -1027,10 +1008,7 @@ spec:
             clusterRole:
               extraResources: []
           image:
-            registry: null
             defaultRegistry: reg.kyverno.io
-            repository: kyverno/reports-controller
-            tag: null
             pullPolicy: IfNotPresent
           imagePullSecrets: []
           replicas: 1

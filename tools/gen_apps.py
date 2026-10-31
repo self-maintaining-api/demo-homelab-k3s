@@ -32,17 +32,28 @@ _Dumper.add_representer(str, _text)
 
 
 IMAGE_PINS = ("tag", "digest", "digestChroot")
+IMAGE_REF = ("registry", "repository", "image", "name", *IMAGE_PINS)
+
+
+def _is_image(node) -> bool:
+    """An image reference: a map with a tag, or with a repository next to a registry or pull policy."""
+    return isinstance(node, dict) and ("tag" in node or ("repository" in node and ({"registry", "pullPolicy"} & node.keys())))
 
 
 def _no_image_tags(node):
-    """The defaults without pinned image tags and digests (image.tag, image.digest, exporter.tag, ...): pinning them
-    here would stop a chart upgrade from upgrading its images, and the test bench would pass because nothing really
-    changed. Keys starting with "_" are left out too: they are chart internals, not options (trust-manager's
-    _defaultReference is a placeholder in the chart's source that its release replaces). Every other default is kept."""
+    """The defaults without image references (registry, repository, tag, digest of image.*, exporter.*, ...): the
+    chart picks its own images. Pinning the tag would stop a chart upgrade from upgrading its images (and the test
+    bench would pass because nothing really changed); pinning the registry and repository breaks an upgrade that
+    swaps an image (kyverno 3.9 replaced registry.k8s.io/kubectl with ghcr.io/kyverno/readiness-checker for its
+    webhook cleanup, tagged with the app version: the old repository with the new tag does not exist). Keys starting
+    with "_" are left out too: they are chart internals, not options (trust-manager's _defaultReference is a
+    placeholder in the chart's source that its release replaces). Every other default is kept, pull policies too."""
     if isinstance(node, dict):
+        image = _is_image(node)
         return {key: _no_image_tags(value) for key, value in node.items()
-                if not (key in IMAGE_PINS and isinstance(value, str) and value)
-                and not str(key).startswith("_")}  # chart internals (trust-manager's _defaultReference: filled at release)
+                if not (image and key in IMAGE_REF and not isinstance(value, (dict, list)))
+                and not (key in IMAGE_PINS and isinstance(value, str) and value)
+                and not str(key).startswith("_")}
     if isinstance(node, list):
         return [_no_image_tags(v) for v in node]
     return node
@@ -97,7 +108,7 @@ def chart_app(name, ns, repo, chart, version, values, wave, ssa=False, release=N
     version = current_version(FILES.get(name, name), version)
     values, own = every_option(chart, values)
     note = (f"Every option of the {chart} chart is set below, at the default of the version these values were written for "
-            f"(tools/chart-defaults/{chart}.yaml; image tags left to the chart), so release notes about any of them match "
+            f"(tools/chart-defaults/{chart}.yaml; images left to the chart), so release notes about any of them match "
             f"this repository. {own} of the settings are this repository's own choices: see tools/gen_apps.py.")
     comment = (comment + "\n" if comment else "") + "\n".join(textwrap.wrap(note, 116))
     opts = ["CreateNamespace=true"] + (["ServerSideApply=true"] if ssa else [])

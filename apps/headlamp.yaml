@@ -1,5 +1,5 @@
 # Every option of the headlamp chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/headlamp.yaml; image tags left to the chart), so release notes about any of them match this
+# (tools/chart-defaults/headlamp.yaml; images left to the chart), so release notes about any of them match this
 # repository. 9 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -24,10 +24,7 @@ spec:
       valuesObject:
         replicaCount: 1
         image:
-          registry: ghcr.io
-          repository: headlamp-k8s/headlamp
           pullPolicy: IfNotPresent
-          tag: ''
         imagePullSecrets: []
         nameOverride: ''
         fullnameOverride: ''

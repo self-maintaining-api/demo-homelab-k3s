@@ -1,5 +1,5 @@
 # Every option of the reloader chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/reloader.yaml; image tags left to the chart), so release notes about any of them match this
+# (tools/chart-defaults/reloader.yaml; images left to the chart), so release notes about any of them match this
 # repository. 6 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -30,8 +30,6 @@ spec:
         nameOverride: ''
         fullnameOverride: ''
         image:
-          name: stakater/reloader
-          repository: ghcr.io/stakater/reloader
           pullPolicy: IfNotPresent
         reloader:
           autoReloadAll: false
