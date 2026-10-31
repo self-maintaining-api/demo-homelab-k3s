@@ -1,6 +1,6 @@
 # Installed first by scripts/vm-bootstrap.sh (same release name), then adopted by this Application.
 # Every option of the argo-cd chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/argo-cd.yaml; image tags left to the chart), so release notes about any of them match this
+# (tools/chart-defaults/argo-cd.yaml; images left to the chart), so release notes about any of them match this
 # repository. 50 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -45,8 +45,6 @@ spec:
           additionalLabels: {}
           revisionHistoryLimit: 3
           image:
-            repository: quay.io/argoproj/argocd
-            tag: ''
             imagePullPolicy: IfNotPresent
           imagePullSecrets: []
           logging:
@@ -283,8 +281,6 @@ spec:
             recommenders: []
             startupBoost: {}
           image:
-            repository: ''
-            tag: ''
             imagePullPolicy: ''
           imagePullSecrets: []
           extraArgs: []
@@ -436,12 +432,9 @@ spec:
             recommenders: []
             startupBoost: {}
           image:
-            repository: ghcr.io/dexidp/dex
             imagePullPolicy: ''
           imagePullSecrets: []
           initImage:
-            repository: ''
-            tag: ''
             imagePullPolicy: ''
             resources: {}
           env: []
@@ -549,13 +542,11 @@ spec:
             recommenders: []
             startupBoost: {}
           image:
-            repository: ecr-public.aws.com/docker/library/redis
             imagePullPolicy: ''
           exporter:
             enabled: false
             env: []
             image:
-              repository: ghcr.io/oliver006/redis_exporter
               imagePullPolicy: ''
             containerSecurityContext:
               runAsNonRoot: true
@@ -671,11 +662,9 @@ spec:
             create: false
         redis-ha:
           enabled: false
-          image:
-            repository: ecr-public.aws.com/docker/library/redis
+          image: {}
           exporter:
             enabled: false
-            image: ghcr.io/oliver006/redis_exporter
           persistentVolume:
             enabled: false
           redis:
@@ -728,8 +717,6 @@ spec:
           enabled: true
           name: redis-secret-init
           image:
-            repository: ''
-            tag: ''
             imagePullPolicy: ''
           extraArgs: []
           imagePullSecrets: []
@@ -787,8 +774,6 @@ spec:
             recommenders: []
             startupBoost: {}
           image:
-            repository: ''
-            tag: ''
             imagePullPolicy: ''
           imagePullSecrets: []
           extraArgs: []
@@ -798,7 +783,6 @@ spec:
           extensions:
             enabled: false
             image:
-              repository: quay.io/argoprojlabs/argocd-extension-installer
               imagePullPolicy: ''
             extensionList: []
             containerSecurityContext:
@@ -1068,8 +1052,6 @@ spec:
             recommenders: []
             startupBoost: {}
           image:
-            repository: ''
-            tag: ''
             imagePullPolicy: ''
           imagePullSecrets: []
           extraArgs: []
@@ -1210,8 +1192,6 @@ spec:
             recommenders: []
             startupBoost: {}
           image:
-            repository: ''
-            tag: ''
             imagePullPolicy: ''
           imagePullSecrets: []
           extraArgs: []
@@ -1391,8 +1371,6 @@ spec:
             recommenders: []
             startupBoost: {}
           image:
-            repository: ''
-            tag: ''
             imagePullPolicy: ''
           imagePullSecrets: []
           extraArgs: []
@@ -1547,8 +1525,6 @@ spec:
           name: commit-server
           runtimeClassName: ''
           image:
-            repository: ''
-            tag: ''
             imagePullPolicy: ''
           extraArgs: []
           extraEnv: []

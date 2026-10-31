@@ -1,7 +1,7 @@
 # k3s' built-in metrics-server is turned off (scripts/vm-bootstrap.sh) so this chart owns it.
 # Every option of the metrics-server chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/metrics-server.yaml; image tags left to the chart), so release notes about any of them match
-# this repository. 5 of the settings are this repository's own choices: see tools/gen_apps.py.
+# (tools/chart-defaults/metrics-server.yaml; images left to the chart), so release notes about any of them match this
+# repository. 5 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -24,8 +24,6 @@ spec:
     helm:
       valuesObject:
         image:
-          repository: registry.k8s.io/metrics-server/metrics-server
-          tag: ''
           pullPolicy: IfNotPresent
         imagePullSecrets: []
         nameOverride: ''
@@ -98,8 +96,7 @@ spec:
           labels: {}
         addonResizer:
           enabled: false
-          image:
-            repository: registry.k8s.io/autoscaling/addon-resizer
+          image: {}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

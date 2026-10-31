@@ -1,6 +1,6 @@
 # Every option of the cert-manager chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/cert-manager.yaml; image tags left to the chart), so release notes about any of them match
-# this repository. 14 of the settings are this repository's own choices: see tools/gen_apps.py.
+# (tools/chart-defaults/cert-manager.yaml; images left to the chart), so release notes about any of them match this
+# repository. 14 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -46,7 +46,6 @@ spec:
         featureGates: ''
         maxConcurrentChallenges: 60
         image:
-          repository: quay.io/jetstack/cert-manager-controller
           pullPolicy: IfNotPresent
         clusterResourceNamespace: ''
         namespace: ''
@@ -177,7 +176,6 @@ spec:
           serviceIPFamilyPolicy: ''
           serviceIPFamilies: []
           image:
-            repository: quay.io/jetstack/cert-manager-webhook
             pullPolicy: IfNotPresent
           serviceAccount:
             create: true
@@ -244,7 +242,6 @@ spec:
           podLabels: {}
           serviceLabels: {}
           image:
-            repository: quay.io/jetstack/cert-manager-cainjector
             pullPolicy: IfNotPresent
           serviceAccount:
             create: true
@@ -254,7 +251,6 @@ spec:
           enableServiceLinks: false
         acmesolver:
           image:
-            repository: quay.io/jetstack/cert-manager-acmesolver
             pullPolicy: IfNotPresent
         startupapicheck:
           enabled: true
@@ -284,7 +280,6 @@ spec:
           tolerations: []
           podLabels: {}
           image:
-            repository: quay.io/jetstack/cert-manager-startupapicheck
             pullPolicy: IfNotPresent
           rbac:
             annotations:

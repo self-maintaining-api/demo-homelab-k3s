@@ -1,6 +1,6 @@
 # Every option of the trivy-operator chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/trivy-operator.yaml; image tags left to the chart), so release notes about any of them match
-# this repository. 19 of the settings are this repository's own choices: see tools/gen_apps.py.
+# (tools/chart-defaults/trivy-operator.yaml; images left to the chart), so release notes about any of them match this
+# repository. 19 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -89,9 +89,6 @@ spec:
           valuesFromSecret: ''
           pprofBindAddress: ''
         image:
-          registry: mirror.gcr.io
-          repository: aquasec/trivy-operator
-          tag: ''
           pullPolicy: IfNotPresent
           pullSecrets: []
         service:
@@ -143,8 +140,6 @@ spec:
         trivy:
           createConfig: true
           image:
-            registry: mirror.gcr.io
-            repository: aquasec/trivy
             imagePullSecret: null
             pullPolicy: IfNotPresent
           mode: Standalone
@@ -273,17 +268,12 @@ spec:
         priorityClassName: ''
         automountServiceAccountToken: true
         policiesBundle:
-          registry: mirror.gcr.io
-          repository: aquasec/trivy-checks
-          tag: 1
           registryUser: null
           registryPassword: null
           existingSecret: false
           insecure: false
         nodeCollector:
           useNodeSelector: true
-          registry: ghcr.io
-          repository: aquasecurity/node-collector
           imagePullSecret: null
           excludeNodes: null
           tolerations: []

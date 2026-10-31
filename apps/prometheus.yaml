@@ -1,5 +1,5 @@
 # Every option of the prometheus chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/prometheus.yaml; image tags left to the chart), so release notes about any of them match this
+# (tools/chart-defaults/prometheus.yaml; images left to the chart), so release notes about any of them match this
 # repository. 23 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -38,8 +38,6 @@ spec:
             enabled: true
             name: configmap-reload
             image:
-              repository: quay.io/prometheus-operator/prometheus-config-reloader
-              digest: ''
               pullPolicy: IfNotPresent
             containerPort: 8080
             containerPortName: metrics
@@ -83,9 +81,6 @@ spec:
           sidecarContainers: {}
           sidecarTemplateValues: {}
           image:
-            repository: quay.io/prometheus/prometheus
-            tag: ''
-            digest: ''
             distroless: false
             pullPolicy: IfNotPresent
           command: []

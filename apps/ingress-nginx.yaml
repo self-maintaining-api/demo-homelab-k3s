@@ -1,7 +1,7 @@
 # Upstream retired ingress-nginx in 2026; it stays here because that is exactly what Stackat should flag.
 # Every option of the ingress-nginx chart is set below, at the default of the version these values were written for
-# (tools/chart-defaults/ingress-nginx.yaml; image tags left to the chart), so release notes about any of them match
-# this repository. 14 of the settings are this repository's own choices: see tools/gen_apps.py.
+# (tools/chart-defaults/ingress-nginx.yaml; images left to the chart), so release notes about any of them match this
+# repository. 14 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -33,7 +33,6 @@ spec:
           enableAnnotationValidations: true
           image:
             chroot: false
-            image: ingress-nginx/controller
             pullPolicy: IfNotPresent
             runAsNonRoot: true
             runAsUser: 101
@@ -283,7 +282,6 @@ spec:
             patch:
               enabled: true
               image:
-                image: ingress-nginx/kube-webhook-certgen
                 pullPolicy: IfNotPresent
               priorityClassName: ''
               podAnnotations: {}
@@ -344,7 +342,6 @@ spec:
           enabled: false
           name: defaultbackend
           image:
-            image: defaultbackend-amd64
             pullPolicy: IfNotPresent
             runAsNonRoot: true
             runAsUser: 65534

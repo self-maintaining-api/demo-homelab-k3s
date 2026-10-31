@@ -1,5 +1,5 @@
 # Every option of the prometheus-blackbox-exporter chart is set below, at the default of the version these values were
-# written for (tools/chart-defaults/prometheus-blackbox-exporter.yaml; image tags left to the chart), so release notes
+# written for (tools/chart-defaults/prometheus-blackbox-exporter.yaml; images left to the chart), so release notes
 # about any of them match this repository. 4 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -45,11 +45,7 @@ spec:
             maxUnavailable: 0
           type: RollingUpdate
         image:
-          registry: quay.io
-          repository: prometheus/blackbox-exporter
-          tag: ''
           pullPolicy: IfNotPresent
-          digest: ''
         podSecurityContext: {}
         securityContext:
           runAsUser: 1000
@@ -221,10 +217,7 @@ spec:
             logLevel: info
             watchInterval: 1m
           image:
-            registry: quay.io
-            repository: prometheus-operator/prometheus-config-reloader
             pullPolicy: IfNotPresent
-            digest: ''
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
