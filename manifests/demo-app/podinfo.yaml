@@ -79,9 +79,9 @@ spec:
   ingressClassName: nginx
   tls:
     - secretName: podinfo-tls
-      hosts: [podinfo.192.168.178.20.nip.io]
+      hosts: [podinfo.demo-k3s.internal]
   rules:
-    - host: podinfo.192.168.178.20.nip.io
+    - host: podinfo.demo-k3s.internal
       http:
         paths:
           - path: /

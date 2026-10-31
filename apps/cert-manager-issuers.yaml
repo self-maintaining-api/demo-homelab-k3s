@@ -1,4 +1,4 @@
-# A private CA for the demo's ingresses (*.nip.io).
+# A private CA for the demo's ingresses (*.demo-k3s.internal).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -6,6 +6,9 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "-2"
+    notifications.argoproj.io/subscribe.on-upgrade-degraded.slack: ""
+    notifications.argoproj.io/subscribe.on-upgrade-failed.slack: ""
+    notifications.argoproj.io/subscribe.on-upgrade-stuck.slack: ""
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

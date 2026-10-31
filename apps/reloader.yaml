@@ -1,3 +1,6 @@
+# Every option of the reloader chart is set below, at the default of the version these values were written for
+# (tools/chart-defaults/reloader.yaml; image tags left to the chart), so release notes about any of them match this
+# repository. 6 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -5,6 +8,10 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    notifications.argoproj.io/subscribe.on-upgrade-healthy.slack: ""
+    notifications.argoproj.io/subscribe.on-upgrade-degraded.slack: ""
+    notifications.argoproj.io/subscribe.on-upgrade-failed.slack: ""
+    notifications.argoproj.io/subscribe.on-upgrade-stuck.slack: ""
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -15,17 +22,119 @@ spec:
     targetRevision: 2.1.5
     helm:
       valuesObject:
+        global:
+          imageRegistry: ''
+          imagePullSecrets: []
+        kubernetes:
+          host: https://kubernetes.default
+        nameOverride: ''
+        fullnameOverride: ''
+        image:
+          name: stakater/reloader
+          repository: ghcr.io/stakater/reloader
+          pullPolicy: IfNotPresent
         reloader:
-          watchGlobally: true
+          autoReloadAll: false
+          isArgoRollouts: false
+          isOpenshift: false
+          ignoreSecrets: false
+          ignoreConfigMaps: false
+          ignoreJobs: false
+          ignoreCronJobs: false
           reloadOnCreate: true
+          reloadOnDelete: false
+          syncAfterRestart: false
+          reloadStrategy: default
+          ignoreNamespaces: ''
+          namespaceSelector: ''
+          resourceLabelSelector: ''
+          logFormat: ''
+          logLevel: info
+          watchGlobally: true
+          enableHA: false
+          readOnlyRootFileSystem: false
+          legacy:
+            rbac: false
+          matchLabels: {}
           enableMetricsByNamespace: true
           deployment:
+            replicas: 1
+            revisionHistoryLimit: 2
+            nodeSelector: null
+            affinity: {}
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 65534
+              seccompProfile:
+                type: RuntimeDefault
+            containerSecurityContext: {}
+            tolerations: []
+            topologySpreadConstraints: []
+            annotations: {}
+            labels:
+              provider: stakater
+              group: com.stakater.platform
+              version: v1.4.5
+            env:
+              open: null
+              secret: null
+              field: null
+              existing: null
+            livenessProbe: {}
+            readinessProbe: {}
             resources:
               requests:
                 cpu: 5m
                 memory: 24Mi
               limits:
                 memory: 96Mi
+            pod:
+              annotations: {}
+            priorityClassName: ''
+            gomaxprocsOverride: ''
+            gomemlimitOverride: ''
+          service: {}
+          rbac:
+            enabled: true
+            labels: {}
+          serviceAccount:
+            create: true
+            labels: {}
+            annotations: {}
+            name: null
+          custom_annotations: {}
+          serviceMonitor:
+            enabled: false
+            labels: {}
+            annotations: {}
+            honorLabels: true
+            metricRelabelings: []
+            relabelings: []
+            targetLabels: []
+          podMonitor:
+            enabled: false
+            labels: {}
+            annotations: {}
+            honorLabels: true
+            metricRelabelings: []
+            relabelings: []
+            podTargetLabels: []
+          podDisruptionBudget:
+            enabled: false
+          netpol:
+            enabled: false
+            from: []
+            to: []
+          verticalPodAutoscaler:
+            enabled: false
+            controlledResources: []
+            maxAllowed: {}
+            minAllowed: {}
+            updatePolicy:
+              updateMode: Auto
+          volumeMounts: []
+          volumes: []
+          webhookUrl: ''
   destination:
     server: https://kubernetes.default.svc
     namespace: reloader

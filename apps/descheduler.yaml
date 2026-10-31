@@ -1,3 +1,6 @@
+# Every option of the descheduler chart is set below, at the default of the version these values were written for
+# (tools/chart-defaults/descheduler.yaml; image tags left to the chart), so release notes about any of them match this
+# repository. 5 of the settings are this repository's own choices: see tools/gen_apps.py.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -5,6 +8,10 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
+    notifications.argoproj.io/subscribe.on-upgrade-healthy.slack: ""
+    notifications.argoproj.io/subscribe.on-upgrade-degraded.slack: ""
+    notifications.argoproj.io/subscribe.on-upgrade-failed.slack: ""
+    notifications.argoproj.io/subscribe.on-upgrade-stuck.slack: ""
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -16,13 +23,131 @@ spec:
     helm:
       valuesObject:
         kind: CronJob
-        schedule: "*/30 * * * *"  # every half hour; nothing runs in between
+        image:
+          repository: registry.k8s.io/descheduler/descheduler
+          tag: ''
+          pullPolicy: IfNotPresent
+        imagePullSecrets: null
         resources:
           requests:
             cpu: 10m
             memory: 32Mi
           limits:
+            cpu: 500m
             memory: 96Mi
+        ports:
+        - containerPort: 10258
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+        podSecurityContext: {}
+        nameOverride: ''
+        fullnameOverride: ''
+        namespaceOverride: ''
+        commonLabels: {}
+        cronJobApiVersion: batch/v1
+        schedule: '*/30 * * * *'
+        suspend: false
+        deschedulingInterval: 5m
+        replicas: 1
+        leaderElection: {}
+        command:
+        - /bin/descheduler
+        cmdOptions:
+          v: 3
+        deschedulerPolicyAPIVersion: descheduler/v1alpha2
+        deschedulerPolicy:
+          profiles:
+          - name: default
+            pluginConfig:
+            - name: DefaultEvictor
+              args:
+                podProtections:
+                  defaultDisabled:
+                  - PodsWithLocalStorage
+                  extraEnabled:
+                  - PodsWithPVC
+            - name: RemoveDuplicates
+            - name: RemovePodsHavingTooManyRestarts
+              args:
+                podRestartThreshold: 100
+                includingInitContainers: true
+            - name: RemovePodsViolatingNodeAffinity
+              args:
+                nodeAffinityType:
+                - requiredDuringSchedulingIgnoredDuringExecution
+            - name: RemovePodsViolatingNodeTaints
+            - name: RemovePodsViolatingInterPodAntiAffinity
+            - name: RemovePodsViolatingTopologySpreadConstraint
+            - name: LowNodeUtilization
+              args:
+                thresholds:
+                  cpu: 20
+                  memory: 20
+                  pods: 20
+                targetThresholds:
+                  cpu: 50
+                  memory: 50
+                  pods: 50
+            plugins:
+              balance:
+                enabled:
+                - RemoveDuplicates
+                - RemovePodsViolatingTopologySpreadConstraint
+                - LowNodeUtilization
+              deschedule:
+                enabled:
+                - RemovePodsHavingTooManyRestarts
+                - RemovePodsViolatingNodeTaints
+                - RemovePodsViolatingNodeAffinity
+                - RemovePodsViolatingInterPodAntiAffinity
+        priorityClassName: system-cluster-critical
+        nodeSelector: {}
+        affinity: {}
+        topologySpreadConstraints: []
+        tolerations: []
+        rbac:
+          create: true
+        serviceAccount:
+          create: true
+          name: null
+          annotations: {}
+        deploymentAnnotations: {}
+        cronJobAnnotations: {}
+        cronJobLabels: {}
+        jobAnnotations: {}
+        jobLabels: {}
+        podAnnotations: {}
+        podLabels: {}
+        dnsConfig: {}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10258
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 20
+          timeoutSeconds: 5
+        service:
+          enabled: false
+          ipFamilyPolicy: ''
+          ipFamilies: []
+        serviceMonitor:
+          enabled: false
+          additionalLabels: {}
+          interval: ''
+          insecureSkipVerify: true
+          serverName: null
+          metricRelabelings: []
+          relabelings: []
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system

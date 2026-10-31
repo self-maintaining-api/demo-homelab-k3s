@@ -1,21 +1,105 @@
 """Writes apps/*.yaml (the Argo CD Applications) from one place: chart, pinned version, values.
 
 Run after changing it: python3 tools/gen_apps.py. Stackat's pull requests edit apps/*.yaml directly; that is fine,
-this file is only a convenient way to write them the first time. Resource requests are set to what each pod uses at
+this file keeps whatever version apps/ already has (current_version), so it never undoes a merged upgrade. Resource requests are set to what each pod uses at
 rest on this cluster (4 vCPU, 5 GiB); memory limits leave headroom for start-up and upgrades.
 """
+import re
+import textwrap
 from pathlib import Path
 
-IP = "192.168.178.20"
+import yaml
+
+DOMAIN = "demo-k3s.internal"  # the UIs' names; ".internal" is reserved for private networks, so no public DNS has it
 REPO = "https://github.com/self-maintaining-api/demo-homelab-k3s.git"
 OUT = Path(__file__).resolve().parent.parent / "apps"
+FILES = {"argocd": "argo-cd"}  # Application name -> file in apps/, where they differ
+DEFAULTS = Path(__file__).resolve().parent / "chart-defaults"  # each chart's own values.yaml, at the version pinned
+
+
+def _text(dumper, data):
+    """Multi-line strings (configs, templates) as readable YAML blocks."""
+    if "\n" in data:
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+class _Dumper(yaml.SafeDumper):
+    pass
+
+
+_Dumper.add_representer(str, _text)
+
+
+IMAGE_PINS = ("tag", "digest", "digestChroot")
+
+
+def _no_image_tags(node):
+    """The defaults without pinned image tags and digests (image.tag, image.digest, exporter.tag, ...): pinning them
+    here would stop a chart upgrade from upgrading its images, and the test bench would pass because nothing really
+    changed. Keys starting with "_" are left out too: they are chart internals, not options (trust-manager's
+    _defaultReference is a placeholder in the chart's source that its release replaces). Every other default is kept."""
+    if isinstance(node, dict):
+        return {key: _no_image_tags(value) for key, value in node.items()
+                if not (key in IMAGE_PINS and isinstance(value, str) and value)
+                and not str(key).startswith("_")}  # chart internals (trust-manager's _defaultReference: filled at release)
+    if isinstance(node, list):
+        return [_no_image_tags(v) for v in node]
+    return node
+
+
+def _merge(base, ours):
+    """Our settings on top of the defaults: maps merge, everything else (lists too, as in Helm) is replaced."""
+    if isinstance(base, dict) and isinstance(ours, dict):
+        out = dict(base)
+        for key, value in ours.items():
+            out[key] = _merge(base.get(key), value) if key in base else value
+        return out
+    return ours
+
+
+def every_option(chart: str, values: str) -> tuple[str, int]:
+    """Every option the chart has, at its default, with this repo's own settings on top: release notes about any
+    option then touch this repository, and an option a new chart renames or removes shows up in the upgrade diff.
+    Returns the values as YAML and how many settings are this repo's own."""
+    ours = yaml.safe_load(values) or {}
+    defaults_file = DEFAULTS / f"{chart}.yaml"
+    if not defaults_file.exists():
+        return values, 0
+    merged = _merge(_no_image_tags(yaml.safe_load(defaults_file.read_text()) or {}), ours)
+    count = len(_leaves(ours))
+    return yaml.dump(merged, Dumper=_Dumper, sort_keys=False, width=4096, allow_unicode=True), count
+
+
+def _leaves(node, prefix=""):
+    if isinstance(node, dict) and node:
+        return [leaf for k, v in node.items() for leaf in _leaves(v, f"{prefix}.{k}" if prefix else str(k))]
+    return [prefix]
+
 
 
 def indent(text: str, n: int = 8) -> str:
     return "\n".join((" " * n + line) if line.strip() else "" for line in text.strip("\n").splitlines()) + "\n"
 
 
+def current_version(name: str, version: str) -> str:
+    """The version already in apps/<name>.yaml when there is one: merged upgrades (Stackat's pull requests) stay merged.
+    The version written here is only used for a new app."""
+    existing = OUT / f"{name}.yaml"
+    if existing.exists():
+        found = re.search(r"^    targetRevision: (\S+)$", existing.read_text(), re.M)
+        if found:
+            return found.group(1)
+    return version
+
+
 def chart_app(name, ns, repo, chart, version, values, wave, ssa=False, release=None, comment=""):
+    version = current_version(FILES.get(name, name), version)
+    values, own = every_option(chart, values)
+    note = (f"Every option of the {chart} chart is set below, at the default of the version these values were written for "
+            f"(tools/chart-defaults/{chart}.yaml; image tags left to the chart), so release notes about any of them match "
+            f"this repository. {own} of the settings are this repository's own choices: see tools/gen_apps.py.")
+    comment = (comment + "\n" if comment else "") + "\n".join(textwrap.wrap(note, 116))
     opts = ["CreateNamespace=true"] + (["ServerSideApply=true"] if ssa else [])
     head = "".join(f"# {line}\n" for line in comment.splitlines()) if comment else ""
     rel = f"\n      releaseName: {release}" if release else ""
@@ -26,6 +110,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "{wave}"
+{ALERTS_CHART}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -57,6 +142,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "{wave}"
+{ALERTS_PROBLEMS}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -88,6 +174,11 @@ RETRY = """    retry:
 
 SCRAPE = 'prometheus.io/scrape: "true"'
 
+# Upgrade alerts to Slack (Argo CD notifications, configured in the argo-cd app below)
+_PROBLEMS = ("on-upgrade-degraded", "on-upgrade-failed", "on-upgrade-stuck")
+ALERTS_PROBLEMS = "\n".join(f'    notifications.argoproj.io/subscribe.{t}.slack: ""' for t in _PROBLEMS)
+ALERTS_CHART = "\n".join(f'    notifications.argoproj.io/subscribe.{t}.slack: ""' for t in ("on-upgrade-healthy", *_PROBLEMS))
+
 APPS = {}
 
 APPS["argo-cd"] = chart_app("argocd", "argocd", "https://argoproj.github.io/argo-helm", "argo-cd", "10.8.4", f"""
@@ -96,6 +187,59 @@ dex:
   enabled: false  # no SSO on a LAN demo; the admin user signs in
 notifications:
   enabled: true
+  # The Slack webhook is a secret made by hand, never in this repository (README: Upgrade alerts):
+  #   kubectl -n argocd create secret generic argocd-notifications-secret --from-literal=slack-webhook-url=...
+  secret:
+    create: false
+  notifiers:
+    service.webhook.slack: |
+      url: $slack-webhook-url
+      headers:
+        - name: Content-Type
+          value: application/json
+  # Every upgrade ends in one message: healthy, degraded, failed to sync, or stuck. Once per version (oncePer).
+  triggers:
+    trigger.on-upgrade-healthy: |
+      - when: app.status.operationState != nil and app.status.operationState.phase == 'Succeeded' and app.status.health.status == 'Healthy'
+        oncePer: app.status.sync.revision
+        send: [upgrade-healthy]
+    trigger.on-upgrade-degraded: |
+      - when: app.status.health.status == 'Degraded'
+        oncePer: app.status.sync.revision
+        send: [upgrade-degraded]
+    trigger.on-upgrade-failed: |
+      - when: app.status.operationState != nil and app.status.operationState.phase in ['Error', 'Failed']
+        oncePer: app.status.sync.revision
+        send: [upgrade-failed]
+    trigger.on-upgrade-stuck: |
+      - when: app.status.health.status == 'Progressing' and app.status.operationState != nil and app.status.operationState.phase == 'Succeeded' and time.Now().Sub(time.Parse(app.status.operationState.finishedAt)).Minutes() >= 10
+        oncePer: app.status.sync.revision
+        send: [upgrade-stuck]
+  templates:
+    template.upgrade-healthy: |
+      webhook:
+        slack:
+          method: POST
+          body: |
+            {{"text": {{{{ printf "✅ *%s* %s rolled out healthy on the demo cluster." .app.metadata.name .app.spec.source.targetRevision | toJson }}}}}}
+    template.upgrade-degraded: |
+      webhook:
+        slack:
+          method: POST
+          body: |
+            {{"text": {{{{ printf "🔴 *%s* is Degraded after the upgrade to %s on the demo cluster: upgrade with care.\\n%s\\nArgo CD: https://argocd.demo-k3s.internal/applications/argocd/%s · Changes: https://github.com/self-maintaining-api/demo-homelab-k3s/commits/main/apps" .app.metadata.name .app.spec.source.targetRevision (.app.status.health.message | default "no message") .app.metadata.name | toJson }}}}}}
+    template.upgrade-failed: |
+      webhook:
+        slack:
+          method: POST
+          body: |
+            {{"text": {{{{ printf "🔴 *%s* could not be synced to %s on the demo cluster: upgrade with care.\\n%s\\nArgo CD: https://argocd.demo-k3s.internal/applications/argocd/%s" .app.metadata.name .app.spec.source.targetRevision (.app.status.operationState.message | default "no message") .app.metadata.name | toJson }}}}}}
+    template.upgrade-stuck: |
+      webhook:
+        slack:
+          method: POST
+          body: |
+            {{"text": {{{{ printf "🟠 *%s* is still not healthy 10 minutes after the upgrade to %s on the demo cluster (pods not ready?).\\n%s\\nArgo CD: https://argocd.demo-k3s.internal/applications/argocd/%s" .app.metadata.name .app.spec.source.targetRevision (.app.status.health.message | default "no message") .app.metadata.name | toJson }}}}}}
   resources:
     requests:
       cpu: 5m
@@ -113,13 +257,19 @@ configs:
     statusbadge.enabled: true
     exec.enabled: true
     kustomize.buildOptions: --enable-helm
+    # trivy-operator writes a report per workload and rewrites them on every scan; Argo CD manages none of them,
+    # and watching them all crashed the controller (out of memory). Kyverno's reports are in the chart's defaults.
+    resourceExclusionsAdditional:
+      - apiGroups: [aquasecurity.github.io]
+        kinds: ["*"]
+        clusters: ["*"]
 controller:
   resources:
     requests:
       cpu: 50m
-      memory: 192Mi
+      memory: 256Mi
     limits:
-      memory: 512Mi
+      memory: 1Gi  # measured: over 512 MiB with ~20 apps and the reports above
   metrics:
     enabled: true
     service:
@@ -147,7 +297,7 @@ server:
   ingress:
     enabled: true
     ingressClassName: nginx
-    hostname: argocd.{IP}.nip.io
+    hostname: argocd.{DOMAIN}
     annotations:
       cert-manager.io/cluster-issuer: demo-ca
     tls: true
@@ -335,15 +485,6 @@ reloader:
         memory: 96Mi
 """, 0)
 
-APPS["cloudnative-pg"] = chart_app("cloudnative-pg", "cnpg-system", "https://cloudnative-pg.github.io/charts", "cloudnative-pg", "0.26.1", """
-resources:
-  requests:
-    cpu: 10m
-    memory: 48Mi
-  limits:
-    memory: 192Mi
-""", -1, ssa=True)
-
 APPS["prometheus"] = chart_app("prometheus", "monitoring", "https://prometheus-community.github.io/helm-charts", "prometheus", "29.36.2", """
 alertmanager:
   enabled: false
@@ -429,11 +570,11 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: demo-ca
   hosts:
-    - grafana.{IP}.nip.io
+    - grafana.{DOMAIN}
   tls:
     - secretName: grafana-tls
       hosts:
-        - grafana.{IP}.nip.io
+        - grafana.{DOMAIN}
 persistence:
   enabled: false  # dashboards come from this repo and grafana.com, nothing to keep
 datasources:
@@ -494,14 +635,14 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: demo-ca
   hosts:
-    - host: headlamp.{IP}.nip.io
+    - host: headlamp.{DOMAIN}
       paths:
         - path: /
           type: Prefix
   tls:
     - secretName: headlamp-tls
       hosts:
-        - headlamp.{IP}.nip.io
+        - headlamp.{DOMAIN}
 resources:
   requests:
     cpu: 5m
@@ -511,8 +652,8 @@ resources:
 """, 0)
 
 APPS["trivy-operator"] = chart_app("trivy-operator", "trivy-system", "https://aquasecurity.github.io/helm-charts", "trivy-operator", "0.36.0", """
-# Scans the images that actually run and keeps a VulnerabilityReport per workload, with per-CVE metrics in
-# Prometheus: the cluster's own answer to "which of these CVEs affect us", next to what Stackat's issues say.
+# Scans the images that actually run and keeps a VulnerabilityReport per workload (every CVE: make vulns), with counts
+# per image and severity in Prometheus: the cluster's own answer to "which of these CVEs affect us", next to Stackat's.
 operator:
   scanJobsConcurrentLimit: 1  # one scan at a time on a small node
   scanJobTTL: 10m
@@ -524,7 +665,7 @@ operator:
   exposedSecretScannerEnabled: true
   infraAssessmentScannerEnabled: false
   clusterComplianceEnabled: false
-  metricsVulnIdEnabled: true
+  metricsVulnIdEnabled: false  # one series per CVE and image filled Prometheus; counts per image and severity stay
   metricsFindingsEnabled: true
   metricsConfigAuditInfo: true
 trivy:
@@ -542,24 +683,6 @@ resources:
     memory: 256Mi
 """, 0, ssa=True)
 
-APPS["falco"] = chart_app("falco", "falco", "https://falcosecurity.github.io/charts", "falco", "8.0.5", """
-# Runtime detection with the modern eBPF probe (no kernel module). Alerts go to its log: kubectl -n falco logs ds/falco
-driver:
-  kind: modern_ebpf
-falco:
-  json_output: true
-metrics:
-  enabled: true
-falcosidekick:
-  enabled: false
-resources:
-  requests:
-    cpu: 20m
-    memory: 160Mi
-  limits:
-    memory: 512Mi
-""", 0, comment="Pinned one major behind (8 -> 9): a migration for Stackat to describe.")
-
 APPS["descheduler"] = chart_app("descheduler", "kube-system", "https://kubernetes-sigs.github.io/descheduler", "descheduler", "0.34.0", """
 kind: CronJob
 schedule: "*/30 * * * *"  # every half hour; nothing runs in between
@@ -575,10 +698,9 @@ for name, text in APPS.items():
     (OUT / f"{name}.yaml").write_text(text)
 
 DIRS = {
-    "cert-manager-issuers": ("manifests/cert-manager-issuers", "cert-manager", -2, "A private CA for the demo's ingresses (*.nip.io)."),
+    "cert-manager-issuers": ("manifests/cert-manager-issuers", "cert-manager", -2, "A private CA for the demo's ingresses (*.demo-k3s.internal)."),
     "trust-bundle": ("manifests/trust-bundle", "cert-manager", 0, "trust-manager copies the demo CA into every namespace."),
     "kyverno-policies": ("manifests/kyverno-policies", "kyverno", 0, "Policies in Audit mode: they report, they never block."),
-    "postgres": ("manifests/postgres", "demo-db", 1, "A one-instance PostgreSQL cluster run by CloudNativePG."),
     "demo-app": ("manifests/demo-app", "demo-app", 1,
                  "podinfo with a secret from External Secrets; Reloader restarts it when the secret changes."),
 }

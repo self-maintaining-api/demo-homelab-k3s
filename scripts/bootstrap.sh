@@ -51,11 +51,12 @@ chmod 600 kubeconfig
 
 cat <<EOF
 
-Cluster is up. Argo CD is installing the apps now (5-10 minutes on the NUC):
+Cluster is up. Argo CD is installing the apps now (5-10 minutes):
 
   export KUBECONFIG=\$PWD/kubeconfig
   kubectl -n argocd get applications
 
+  make hosts           # the line for /etc/hosts, so the UIs' names work
   make urls            # the web UIs
   make argocd-password # Argo CD's admin password
 EOF

@@ -72,7 +72,7 @@ resource "proxmox_virtual_environment_vm" "k3s" {
   serial_device {} # the Ubuntu cloud image logs to the serial console
 
   startup {
-    order    = 3 # after semapi and CI
+    order    = 3 # after the host's other VMs
     up_delay = 30
   }
 }

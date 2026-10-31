@@ -5,7 +5,7 @@ variable "node_name" {
 }
 
 variable "vm_id" {
-  description = "Proxmox VM ID (100 is semapi, 120 is stackat-ci)."
+  description = "Proxmox VM ID (pick one not in use: qm list)."
   type        = number
   default     = 130
 }
@@ -22,7 +22,7 @@ variable "cores" {
 }
 
 variable "memory_mb" {
-  description = "RAM in MiB. The host had about 6 GiB free next to semapi and CI; 5 GiB leaves room for Proxmox itself."
+  description = "RAM in MiB. The apps request about 2 GiB; k3s and Ubuntu about 0.8 GiB more."
   type        = number
   default     = 5120
 }
@@ -49,20 +49,20 @@ variable "bridge" {
   default = "vmbr0"
 }
 
+# Your network: set these in terraform/terraform.tfvars (ignored by git), see terraform.tfvars.example.
 variable "ip_cidr" {
-  description = "Static address of the VM, in CIDR notation."
+  description = "Static address of the VM, in CIDR notation, e.g. 10.0.0.20/24."
   type        = string
-  default     = "192.168.178.20/24"
 }
 
 variable "gateway" {
-  type    = string
-  default = "192.168.178.1"
+  description = "Your router's address."
+  type        = string
 }
 
 variable "dns_servers" {
-  type    = list(string)
-  default = ["192.168.178.1", "1.1.1.1"]
+  description = "DNS servers for the VM."
+  type        = list(string)
 }
 
 variable "ssh_public_key_file" {
