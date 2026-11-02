@@ -17,6 +17,10 @@ purpose, so you can watch Stackat do its job here in the open.
 - **[`.stackat.yml`](.stackat.yml)**: the settings this repository uses (pull requests on, who may ask for them, what
   counts as up to date).
 
+**Want to see the dashboard?** It shows every repository at once: what is behind, what needs you, and the settings in
+use. It is not public: [book a 30-minute call](https://calendar.app.google/BYg3LbGMzwNaMZTz5) and we walk you through
+it on this cluster.
+
 ## What runs here
 
 | App | What to look for |
@@ -93,5 +97,5 @@ make hosts    # the /etc/hosts line for the UIs (*.demo-k3s.internal)
 
 ## Try Stackat on your own repositories
 
-[stackat.dev](https://stackat.dev) · [Documentation](https://docs.stackat.dev) · 14 days free, then a free plan for one
-repository.
+[stackat.dev](https://stackat.dev) · [Documentation](https://docs.stackat.dev) · [Book a call](https://calendar.app.google/BYg3LbGMzwNaMZTz5) ·
+14 days free, then a free plan for one repository.
