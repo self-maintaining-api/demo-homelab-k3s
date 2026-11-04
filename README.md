@@ -65,8 +65,7 @@ notifications in `apps/argo-cd.yaml`; the Slack webhook is a Kubernetes secret t
 2. It compares them with this repository's own files: the values set, the custom resources used, the features turned on
    or off.
 3. It opens one issue per tool with what to change, and a pull request with the bump.
-4. The upgrade-diff workflow comments what the bump really changes.
-5. A maintainer merges; Argo CD rolls it out within three minutes; Stackat closes the issue on its next scan.
+4. A maintainer merges; Argo CD rolls it out within three minutes; Stackat closes the issue on its next scan.
 
 ## Repository layout
 
@@ -77,7 +76,6 @@ notifications in `apps/argo-cd.yaml`; the Slack webhook is a Kubernetes secret t
 | `argocd/root.yaml` | The app of apps that points Argo CD at `apps/` |
 | `terraform/` | The virtual machine (Proxmox) |
 | `scripts/` | Installs k3s and Argo CD on a fresh machine |
-| `tools/upgrade_diff.py` | The upgrade diff behind the pull request comments |
 
 ## Run it yourself
 
