@@ -4,7 +4,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.117.0" # pinned behind the latest on purpose: Stackat opens the upgrade issue
+      version = "~> 0.120.0" # pinned behind the latest on purpose: Stackat opens the upgrade issue
     }
   }
 }
